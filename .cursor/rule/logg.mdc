@@ -1,0 +1,30 @@
+---
+alwaysApply: true
+---
+# Logging Configuration Standards
+
+此文档定义了系统日志记录的强制性规范，开发人员需严格遵循以下规则配置日志模块。
+
+### 1. 核心原则 (Core Principles)
+* **库的使用**：必须且只能使用 Python 标准库 `logging` 模块，禁止引入第三方日志库（除非架构组另有特别指定）。
+* **禁止 Print**：生产环境代码中 **严禁** 出现任何 `print()` 语句。所有的输出必须通过 logger 实例进行。
+
+<!-- ### 2. 控制台输出规则 (Console Handler)
+* **目的**：仅用于运维人员快速查看服务运行状态，保持界面清爽。
+* **日志级别**：`INFO` 及以上。
+* **内容限制**：
+    * 仅打印消息正文 (Message Only)。
+    * **严格禁止堆栈信息**：即使捕获到异常（Exception），控制台也不得输出 traceback/stack trace。必须通过自定义 Formatter 拦截并屏蔽 `exc_info`。
+
+### 3. 文件输出规则 (File Handler)
+* **目的**：用于事后故障排查、Bug 定位和审计。
+* **日志级别**：`DEBUG` 及以上（捕获所有细节）。
+* **文件管理**：必须使用 `RotatingFileHandler`（或类似轮转机制），限制单文件大小及备份数量，防止磁盘占满。
+* **内容要求**：
+    * **格式详尽**：必须包含 时间戳 (`asctime`)、日志级别、文件名、行号 以及 消息正文。
+    * **完整堆栈**：当发生异常时，必须记录完整的堆栈跟踪信息 (Stack Trace/Traceback)。 -->
+
+### 4. 异常处理规范 (Exception Handling)
+* 在 `try...except` 块中记录错误时：
+    * 代码逻辑应调用 `logger.exception("错误描述")` 或 `logger.error("...", exc_info=True)`。
+    * **底层实现要求**：通过不同的 Formatter 策略，确保上述调用在 **写入文件时保留堆栈**，但在 **输出到控制台时自动剥离堆栈**。

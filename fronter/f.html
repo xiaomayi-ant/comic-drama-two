@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>文案仿写工具</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: #f5f5f5;
+    }
+
+    .container {
+      display: flex;
+      gap: 16px;
+      height: calc(100vh - 32px);
+    }
+
+    .panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    textarea {
+      flex: 1;
+      resize: none;
+      padding: 12px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      margin-top: 12px;
+      padding: 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .output textarea {
+      background: #fafafa;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- 左侧输入 -->
+    <div class="panel input">
+      <h3>原始文案</h3>
+      <textarea id="inputText" placeholder="在这里输入原始文案..."></textarea>
+      <button onclick="rewrite()">生成仿写</button>
+    </div>
+
+    <!-- 右侧输出 -->
+    <div class="panel output">
+      <h3>仿写结果</h3>
+      <textarea id="outputText" placeholder="这里显示仿写后的文案..." readonly></textarea>
+    </div>
+  </div>
+
+  <script>
+    async function rewrite() {
+      const inputText = document.getElementById('inputText').value;
+      const outputText = document.getElementById('outputText');
+
+      if (!inputText.trim()) {
+        alert('请输入原始文案');
+        return;
+      }
+
+      outputText.value = '生成中...';
+
+      try {
+        // 后端使用 FastAPI，路由前缀是 /api/v1（见 src/api/server.py）
+        const response = await fetch('/api/v1/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            // 对齐后端 Pydantic schema: CopywritingRequest
+            user_input: inputText,
+            // 最小实现：前端只有一个输入框，所以这里给一个默认“仿写”指令
+            user_instructions: '请对这段文案进行仿写：保持原有结构与节奏，表达更自然，避免抄袭，输出完整可用的新版本。'
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          outputText.value = (data && (data.detail || data.error)) ? (data.detail || data.error) : '请求失败';
+          return;
+        }
+        outputText.value = data.final_copy || data.draft_copy || data.error || '未返回结果';
+      } catch (err) {
+        outputText.value = '请求失败，请检查后端接口';
+      }
+    }
+  </script>
+
+</body>
+</html>

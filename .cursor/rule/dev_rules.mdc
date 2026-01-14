@@ -1,0 +1,80 @@
+1.# Python Development Standards (Modern Stack)
+项目开发语言选择Python
+本文档规定了 Python 项目开发的强制性工程标准。项目采用现代化的工具链（uv + Pydantic V2），所有提交必须符合以下规范。
+
+### 1. 项目配置与依赖管理 (Project Config & Dependencies)
+* **包管理器**：
+    * **首选工具**：必须使用 **[uv](https://github.com/astral-sh/uv)** 进行依赖管理、虚拟环境创建及 Python 版本管理（因其极速与标准兼容性）。
+    * **Pip 兼容性**：项目结构必须保持标准，确保即使在没有 `uv` 的环境中，也能通过标准 `pip install .` 或 `pip install -r requirements.txt`（由 uv 导出）正常安装。
+* **配置文件**：
+    * **单一事实来源**：必须创建 `pyproject.toml` 文件。
+    * **配置集中化**：所有依赖列表（dependencies）、构建系统要求、以及工具配置（Black, Isort, Pytest, MyPy 等）必须全部集成在 `pyproject.toml` 中，严禁散落在根目录（如禁止单独的 `.isort.cfg` 或 `pytest.ini`，除非工具不支持）。
+* **虚拟环境**：禁止将虚拟环境文件夹（如 `.venv`）提交到版本控制系统。
+
+### 2. 数据模型与类型安全 (Data Modeling & Type Safety)
+* **核心库**：数据校验与结构化对象必须使用 **Pydantic V2**。
+* **模型定义**：
+    * 严禁使用 `dict` 传递复杂业务数据。
+    * 必须继承 `pydantic.BaseModel`。
+    * 使用 V2 特有的 `model_config` 进行配置（如 `frozen=True`, `str_strip_whitespace=True`）。
+* **类型注解**：
+    * 所有函数入参、返回值及类属性必须包含 Type Hints。
+    * 避免使用 `Any`。对于 Pydantic 模型字段，必须使用 `Field(...)` 定义元数据和校验规则（如 `default_factory`, `ge`, `le` 等）。
+* **静态检查**：CI 流程必须通过类型检查（MyPy 或 Pyright），且配置需读取 `pyproject.toml`。
+
+### 3. 日志规范 (Logging Standards)
+* **库的使用**：仅允许使用 Python **标准库 `logging`**，禁止引入 Loguru 等第三方日志库。
+* **输出原则**：
+    * **禁止 Print**：代码中严禁出现 `print()`。
+    * **控制台 (Console)**：仅输出 `INFO` 级别及以上简要信息，**必须屏蔽堆栈追踪 (Traceback)**（通过自定义 Formatter 实现）。
+    * **文件 (File)**：必须使用 `RotatingFileHandler`，记录 `DEBUG` 级别详细信息及 **完整堆栈**。
+* **实例化**：每个模块应使用 `logger = logging.getLogger(__name__)` 获取实例。
+
+### 4. 代码风格与格式化 (Style & Formatting)
+* **自动化工具**：
+    * 统一使用 **Ruff**（由 uv 同团队开发）来替代 Black/Isort/Flake8，配置同样位于 `pyproject.toml`。
+* **命名规范**：
+    * 遵循 PEP 8。
+    * 变量/函数：`snake_case`。
+    * 类/Pydantic模型：`PascalCase`。
+    * 常量：`UPPER_CASE`。
+
+### 5. 异常处理 (Exception Handling)
+* **精准捕获**：禁止使用裸 `except:`，必须捕获特定异常（如 `pydantic.ValidationError`）。
+* **错误传播**：
+    * 在分层架构中，底层异常应包装为自定义业务异常抛出，或在当前层记录日志后处理。
+    * 这里的日志记录需配合第 3 条规则：`logger.exception("...")` 确保堆栈被文件记录但被控制台隐藏。
+
+### 6. 测试与质量 (Testing & Quality)
+* **测试框架**：使用 **Pytest**。
+* **配置位置**：Pytest 配置与插件设置必须位于 `pyproject.toml` 的 `[tool.pytest.ini_options]` 块中。
+* **覆盖率**：核心逻辑必须编写单元测试，建议结合 `pytest-cov` 生成覆盖率报告。
+
+---
+**配置示例 (`pyproject.toml` 片段):**
+
+```toml
+[project]
+name = "my-project"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "pydantic>=2.0.0",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0.0",
+    "black>=24.0.0",
+]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
