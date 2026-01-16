@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.api.routes import router
@@ -58,14 +58,14 @@ app.include_router(router, prefix="/api/v1")
 
 @app.get("/", include_in_schema=False)
 async def root():
-    """根路径：直接返回最小前端页面"""
-    index_file = FRONT_DIR / "f.html"
+    """根路径：跳转到静态前端（/fronter/）"""
+    index_file = FRONT_DIR / "index.html"
     if index_file.exists():
-        return FileResponse(str(index_file))
+        return RedirectResponse(url="/fronter/", status_code=302)
     return {
         "name": "文案写作助手 API",
         "version": "0.1.0",
         "docs": "/docs",
-        "hint": "前端目录缺失：请确认项目根目录下存在 fronter/f.html",
+        "hint": "前端目录缺失：请先将前端 build 产物复制到项目根目录的 fronter/（需要包含 index.html 与 assets/）",
     }
 

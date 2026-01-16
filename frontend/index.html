@@ -1,0 +1,57 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cloud Dancer Copywriting Tool</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            clouddancer: '#F0EEE9',
+            warmbeige: '#F0EEE9',
+            embedded: '#F0EEE9'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html, body {
+      height: 100%;
+      background-color: #F0EEE9;
+    }
+    body {
+      background-color: #F0EEE9;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .embedded-container {
+      box-shadow: inset 4px 4px 10px rgba(0,0,0,0.05), inset -4px -4px 10px rgba(255,255,255,0.8);
+      background: #F0EEE9;
+      border-radius: 24px;
+    }
+    .embedded-textarea {
+      box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1), 1px 1px 0px rgba(255,255,255,0.5);
+      border: 1px solid rgba(0,0,0,0.05);
+      transform: perspective(1000px) rotateX(2deg);
+      transition: transform 0.3s ease;
+    }
+    .embedded-textarea:focus {
+      transform: perspective(1000px) rotateX(0deg);
+      outline: none;
+    }
+    .star-rating button:hover,
+    .star-rating button.active {
+      color: #D4AF37;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

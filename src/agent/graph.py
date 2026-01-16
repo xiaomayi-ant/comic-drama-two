@@ -6,18 +6,21 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 
 from src.agent.nodes import (
+    intent_analysis_node,
     breakdown_node,
     analysis_report_node,
-    intent_analysis_node,
     move_plan_node,
     proofread_node,
     reverse_engineer_node,
     route_by_intent,
     should_continue,
     simple_chat_node,
+    should_proceed_after_verify,
+    verify_node,
     writing_node,
 )
 from src.agent.state import AgentState, IntentType
+from src.core.config import settings
 from src.core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -27,10 +30,10 @@ def create_agent_graph(with_memory: bool = True):
     """
     创建文案写作助手 Agent 工作流
     
-    工作流程:
+    工作流程（仿写优先版本）:
     1. intent_analysis: 分析用户意图
     2. 根据意图路由:
-       - copy_writing: breakdown → writing → proofread → (迭代或输出)
+       - copy_writing: reverse_engineer → move_plan → writing → verify → proofread → (迭代或输出)
        - copy_analysis: breakdown → 直接输出分析结果
        - simple_chat: 直接 LLM 回复
     
@@ -54,6 +57,7 @@ def create_agent_graph(with_memory: bool = True):
     workflow.add_node("reverse_engineer", reverse_engineer_node)
     workflow.add_node("move_plan", move_plan_node)
     workflow.add_node("writing", writing_node)
+    workflow.add_node("verify", verify_node)
     workflow.add_node("proofread", proofread_node)
     workflow.add_node("simple_chat", simple_chat_node)
     
@@ -79,8 +83,10 @@ def create_agent_graph(with_memory: bool = True):
         "intent_analysis",
         route_by_intent,
         {
-            "copy_flow": "breakdown",      # 文案创作流程
-            "analysis_flow": "breakdown",  # 文案分析流程（也需要先解析）
+            # 仿写/创作：不再依赖 breakdown（避免分析口径污染），直接进入 prior → plan → write
+            "copy_flow": "reverse_engineer",
+            # 分析：仍走 breakdown
+            "analysis_flow": "breakdown",
             "chat_flow": "simple_chat",    # 简单聊天
         },
     )
@@ -108,15 +114,25 @@ def create_agent_graph(with_memory: bool = True):
     )
 
     # ============================================================
-    # 三链路顺序汇入（确保结果都能被 writing 使用）
-    # breakdown → analysis_report → reverse_engineer → move_plan → writing → proofread
+    # 仿写链路（prior-driven）
+    # reverse_engineer(prior) → move_plan(projection) → writing(execution) → verify(rule checks) → proofread(llm)
     # ============================================================
-    workflow.add_edge("analysis_report", "reverse_engineer")
     workflow.add_edge("reverse_engineer", "move_plan")
     workflow.add_edge("move_plan", "writing")
+    workflow.add_edge("writing", "verify")
     
-    # writing → proofread
-    workflow.add_edge("writing", "proofread")
+    # verify → 条件路由（规则不过直接回写作；过了再进入 LLM 评测）
+    workflow.add_conditional_edges(
+        "verify",
+        should_proceed_after_verify,
+        {
+            "revise": "writing",
+            "proceed": "proofread",
+        },
+    )
+    
+    # 分析链路（保留，供未来扩展；当前 analysis_flow 直接输出 breakdown）
+    workflow.add_edge("analysis_report", "reverse_engineer")
     
     # proofread → 条件路由
     workflow.add_conditional_edges(
@@ -189,7 +205,9 @@ def run_agent(
         "analysis_report": None,
         "reverse_config": None,
         "move_plan": None,
+        "verification_result": None,
         "draft_copy": None,
+        "writing_meta": None,
         "proofread_result": None,
         "final_copy": None,
         "artifact_paths": None,
@@ -199,9 +217,12 @@ def run_agent(
     }
     
     # 配置
+    # NOTE: recursion_limit is a safety-net for graph loops. Keep it aligned with max_iterations
+    # so we fail fast if something is wrong, instead of burning tokens forever.
+    recursion_limit = max(25, int(getattr(settings, "max_iterations", 3) or 3) * 10)
     config = {
         "configurable": {"thread_id": thread_id},
-        "recursion_limit": 50,  # 增加递归限制
+        "recursion_limit": recursion_limit,
     }
     
     # 执行工作流
@@ -220,7 +241,9 @@ def run_agent(
             "analysis_report": final_state.get("analysis_report"),
             "reverse_config": final_state.get("reverse_config"),
             "move_plan": final_state.get("move_plan"),
+            "verification_result": final_state.get("verification_result"),
             "proofread_result": final_state.get("proofread_result"),
+            "writing_meta": final_state.get("writing_meta"),
             "artifact_paths": final_state.get("artifact_paths"),
             "iteration_count": final_state.get("iteration_count", 0),
             "error": final_state.get("error"),
@@ -275,7 +298,9 @@ async def run_agent_stream(
         "analysis_report": None,
         "reverse_config": None,
         "move_plan": None,
+        "verification_result": None,
         "draft_copy": None,
+        "writing_meta": None,
         "proofread_result": None,
         "final_copy": None,
         "artifact_paths": None,
@@ -285,9 +310,10 @@ async def run_agent_stream(
     }
     
     # 配置
+    recursion_limit = max(25, int(getattr(settings, "max_iterations", 3) or 3) * 10)
     config = {
         "configurable": {"thread_id": thread_id},
-        "recursion_limit": 50,
+        "recursion_limit": recursion_limit,
     }
     
     try:

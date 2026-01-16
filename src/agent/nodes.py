@@ -7,7 +7,7 @@ from typing import Any, Optional
 
 from langchain_community.chat_models import ChatTongyi
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import RunnableConfig #可运行配置的类 
 from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel, Field
 
@@ -433,6 +433,106 @@ def _apply_move_plan_to_schema(schema_ir: dict[str, Any], move_ids: list[int]) -
     return out
 
 
+def _coerce_int_list(value: Any) -> list[int]:
+    """Best-effort convert an arbitrary value to a list[int]."""
+    out: list[int] = []
+    if value is None:
+        return out
+    if isinstance(value, (list, tuple)):
+        for x in value:
+            try:
+                i = int(x)
+            except Exception:
+                continue
+            if i not in out:
+                out.append(i)
+        return out
+    # allow comma separated string like "1,4,9"
+    if isinstance(value, str):
+        parts = re.split(r"[,\s]+", value.strip())
+        for p in parts:
+            if not p:
+                continue
+            try:
+                i = int(p)
+            except Exception:
+                continue
+            if i not in out:
+                out.append(i)
+    return out
+
+
+def _deterministic_project_plan(
+    *,
+    reverse_config: dict[str, Any] | None,
+    target_duration_sec: int,
+    user_instructions: str,
+) -> dict[str, Any] | None:
+    """
+    Project a plan deterministically from reverse_config (structure prior).
+
+    This is the "prior-driven" behavior for imitation:
+    - Take move_sequence as primary structure
+    - Ensure required moves (1,4,9) exist
+    - Allocate budgets proportionally (simple heuristic)
+    """
+    if not reverse_config or not isinstance(reverse_config, dict):
+        return None
+    seq = _coerce_int_list(reverse_config.get("move_sequence"))
+    if not seq:
+        return None
+
+    # sanitize + keep only [1..10]
+    move_ids: list[int] = [i for i in seq if 1 <= i <= 10]
+    for required in (1, 4, 9):
+        if required not in move_ids:
+            # place required moves in a sane location: headline first, CTA last, core in middle
+            if required == 1:
+                move_ids.insert(0, 1)
+            elif required == 9:
+                move_ids.append(9)
+            else:
+                insert_at = min(max(1, len(move_ids) // 2), len(move_ids))
+                move_ids.insert(insert_at, 4)
+
+    # de-dup preserving order
+    dedup: list[int] = []
+    for i in move_ids:
+        if i not in dedup:
+            dedup.append(i)
+    move_ids = dedup
+
+    # budgets: give 4 the biggest share, 1/9 medium, others small
+    base = max(10, int(target_duration_sec))
+    weights: dict[int, float] = {}
+    for mid in move_ids:
+        if mid == 4:
+            weights[mid] = 5.0
+        elif mid in (1, 9):
+            weights[mid] = 2.0
+        else:
+            weights[mid] = 1.0
+    total_w = sum(weights.values()) or 1.0
+    budgets: dict[str, int] = {}
+    for mid in move_ids:
+        budgets[str(mid)] = max(2, int(round(base * (weights[mid] / total_w))))
+
+    omitted = [i for i in range(1, 11) if i not in move_ids]
+    return {
+        "target_duration_sec": base,
+        "move_ids": move_ids,
+        "move_budgets_sec": budgets,
+        "omitted_move_ids": omitted,
+        "fusion_notes": str(reverse_config.get("move_fusion_notes") or "").strip(),
+        "risk_notes": str((reverse_config.get("persuasion_strategy") or {}).get("objection_handling") or "").strip(),
+        "_planner_mode": "deterministic_prior_projection",
+        "_planner_inputs": {
+            "used_reverse_config": True,
+            "used_user_instructions": bool(user_instructions),
+        },
+    }
+
+
 def move_plan_node(state: AgentState, config: RunnableConfig) -> dict[str, Any]:
     """
     Dynamic move planning node.
@@ -453,6 +553,19 @@ def move_plan_node(state: AgentState, config: RunnableConfig) -> dict[str, Any]:
     reverse_config = state.get("reverse_config") or {}
 
     target_duration_sec = _resolve_target_duration_sec(schema_ir, user_instructions)
+
+    # ------------------------------------------------------------
+    # Prior-driven mode (imitation): if reverse_config provides a move_sequence,
+    # project deterministically without an extra LLM call.
+    # ------------------------------------------------------------
+    projected = _deterministic_project_plan(
+        reverse_config=reverse_config,
+        target_duration_sec=target_duration_sec,
+        user_instructions=user_instructions,
+    )
+    if projected:
+        logger.info(f"✅ Move 规划完成（先验投影）: moves={projected.get('move_ids')}")
+        return {"move_plan": projected}
 
     breakdown_json = ""
     try:
@@ -538,6 +651,7 @@ def move_plan_node(state: AgentState, config: RunnableConfig) -> dict[str, Any]:
         "omitted_move_ids": plan.get("omitted_move_ids") or omitted,
         "fusion_notes": str(plan.get("fusion_notes") or "").strip(),
         "risk_notes": str(plan.get("risk_notes") or "").strip(),
+        "_planner_mode": "llm_plan",
     }
 
     logger.info(f"✅ Move 规划完成: moves={move_ids}")
@@ -561,6 +675,7 @@ def writing_node(state: AgentState, config: RunnableConfig) -> dict[str, Any]:
     user_instructions = state.get("user_instructions", "")
     breakdown_result = state.get("breakdown_result")
     proofread_result = state.get("proofread_result")
+    verification_result = state.get("verification_result")
     iteration_count = state.get("iteration_count", 0)
 
     # 规划（IR）：构建 Ten-move schema（如果调用方传入则优先使用）
@@ -606,6 +721,10 @@ def writing_node(state: AgentState, config: RunnableConfig) -> dict[str, Any]:
         feedback = proofread_result.get("feedback", "")
         if feedback:
             context_parts.append(f"【上一轮评测反馈，请据此改进】\n{feedback}")
+    if verification_result and iteration_count > 0:
+        vfb = str(verification_result.get("feedback") or "").strip()
+        if vfb:
+            context_parts.append(f"【上一轮规则验收失败原因（必须修复）】\n{vfb}")
 
     schema_text = json.dumps(schema_ir, ensure_ascii=False)
     gen_prompt = TEN_MOVE_LIVE_GEN_PROMPT.replace("{PASTE_SCHEMA_JSON_HERE}", schema_text)
@@ -630,38 +749,41 @@ def writing_node(state: AgentState, config: RunnableConfig) -> dict[str, Any]:
         if settings.debug_llm_io:
             _dbg("writing.llm_raw", raw_text[:3000])
         
-        # 手动解析两段输出：先提取 JSON（filled schema），剩余部分是 final copy
-        filled_schema, tail_text = _extract_json_and_tail(raw_text)
-        
-        # 如果没解析到 JSON，用原始 schema_ir
+        # 解析：强约束为「单一 JSON 对象」：
+        # { "filled_schema": {...}, "final_copy_text": "..." }
+        parsed = _extract_json(raw_text) or {}
+        parse_mode = "none"
+        filled_schema = {}
+        draft = ""
+        if isinstance(parsed, dict) and ("filled_schema" in parsed or "final_copy_text" in parsed):
+            parse_mode = "strict_envelope"
+            filled_schema = parsed.get("filled_schema") or {}
+            draft = str(parsed.get("final_copy_text") or "").strip()
+        elif isinstance(parsed, dict) and "move_sequence" in parsed:
+            # 兼容：模型直接输出了 schema（老行为），当作 filled_schema
+            parse_mode = "schema_only"
+            filled_schema = parsed
+            draft = ""
+        else:
+            parse_mode = "fallback_raw"
+            filled_schema = {}
+            draft = ""
+
         if not filled_schema:
+            # hard fallback: keep pipeline alive, but we will rely on verify to request revision
             filled_schema = schema_ir
-            tail_text = raw_text
-        
-        # 提取最终口播文案
-        # 优先用 tail_text（JSON 之后的部分），如果为空则尝试从 move_sequence 拼接
-        draft = tail_text.strip()
-        
-        # 去掉可能的标记前缀（如 "2) FINAL_COPY_TEXT" 或 "FINAL_COPY_TEXT:"）
-        draft = re.sub(r"^[12]\)\s*FINAL_COPY_TEXT[:\s]*", "", draft, flags=re.IGNORECASE).strip()
-        draft = re.sub(r"^FINAL_COPY_TEXT[:\s]*", "", draft, flags=re.IGNORECASE).strip()
-        
-        # 如果 draft 为空或太短，尝试从 filled_schema 的 move_sequence 拼接
+
         if len(draft) < 20:
+            # fallback: render from moves
             draft_from_moves = "\n".join(
                 (m.get("content") or "").strip()
-                for m in filled_schema.get("move_sequence", [])
+                for m in filled_schema.get("move_sequence", []) or []
                 if (m.get("content") or "").strip()
             ).strip()
             if draft_from_moves:
                 draft = draft_from_moves
-        
-        # 如果还是没有内容，说明模型可能没按格式输出，直接用 raw_text 去掉 JSON 部分
-        if len(draft) < 20:
-            # 尝试去掉 JSON 块后的内容
-            no_json = re.sub(r"\{[\s\S]*?\}", "", raw_text, count=1).strip()
-            if len(no_json) > 20:
-                draft = no_json
+            else:
+                draft = raw_text.strip()
         
         if settings.debug_llm_io:
             _dbg("writing.parsed_schema", filled_schema)
@@ -675,6 +797,11 @@ def writing_node(state: AgentState, config: RunnableConfig) -> dict[str, Any]:
             "draft_copy": draft,
             "iteration_count": new_iteration,
             "schema_ir": filled_schema,
+            "writing_meta": {
+                "parse_mode": parse_mode,
+                "had_envelope": bool(isinstance(parsed, dict) and ("filled_schema" in parsed or "final_copy_text" in parsed)),
+                "draft_len": len(draft),
+            },
         }
         
     except Exception as e:
@@ -779,6 +906,8 @@ def proofread_node(state: AgentState, config: Optional[RunnableConfig] = None) -
                     "analysis_report": state.get("analysis_report"),
                     "reverse_config": state.get("reverse_config"),
                     "schema_ir": state.get("schema_ir"),
+                    "verification_result": state.get("verification_result"),
+                    "writing_meta": state.get("writing_meta"),
                     "proofread_result": proofread_result.model_dump(),
                     "final_copy": final_copy,
                 }
@@ -964,3 +1093,142 @@ def should_continue(state: AgentState) -> str:
     
     # 默认结束
     return "end"
+
+
+# ============================================================
+# verification: deterministic checks for imitation / constraints
+# ============================================================
+
+def _contains_any(text: str, terms: list[str]) -> list[str]:
+    hits: list[str] = []
+    for t in terms:
+        tt = str(t).strip()
+        if not tt:
+            continue
+        if tt in text and tt not in hits:
+            hits.append(tt)
+    return hits
+
+
+def verify_node(state: AgentState) -> dict[str, Any]:
+    """
+    规则验收节点（确定性）：
+    - 对齐仿写链路目标：先验一致性 + 约束满足（而非主观评分）
+    - 失败则给出可执行的修复反馈，让 writing 下一轮修正
+    """
+    logger.info("🧪 执行规则验收节点 (Verify Node)")
+
+    draft = (state.get("draft_copy") or "").strip()
+    schema_ir = state.get("schema_ir") or {}
+    move_plan = state.get("move_plan") or {}
+    iteration_count = int(state.get("iteration_count", 0) or 0)
+    max_iterations = int(getattr(settings, "max_iterations", 3) or 3)
+
+    must_include = (schema_ir.get("global_constraints") or {}).get("must_include_terms") or []
+    must_avoid = (schema_ir.get("global_constraints") or {}).get("must_avoid_terms") or []
+    try:
+        must_include_terms = [str(x).strip() for x in must_include if str(x).strip()]
+    except Exception:
+        must_include_terms = []
+    try:
+        must_avoid_terms = [str(x).strip() for x in must_avoid if str(x).strip()]
+    except Exception:
+        must_avoid_terms = []
+
+    issues: list[str] = []
+
+    if len(draft) < 30:
+        issues.append("文案过短或为空（<30字），无法用于口播。")
+
+    missing = [t for t in must_include_terms if t not in draft]
+    if missing:
+        issues.append(f"缺少必须包含词：{missing}")
+
+    avoided_hits = _contains_any(draft, must_avoid_terms)
+    if avoided_hits:
+        issues.append(f"命中必须避免词：{avoided_hits}")
+
+    # Conservative “absolute claim” detection (MVP)
+    absolute_terms = ["最", "第一", "唯一", "100%", "百分百", "绝对", "包治", "根治", "永久", "无副作用"]
+    abs_hits = _contains_any(draft, absolute_terms)
+    # "最" is common in Chinese; only flag if it appears with strong claim patterns (light heuristic)
+    if "最" in abs_hits:
+        # if only "最" hit, do not over-flag unless multiple absolutes also appear
+        if len(abs_hits) >= 2:
+            issues.append(f"可能存在绝对化/夸大表达：{abs_hits}")
+    elif abs_hits:
+        issues.append(f"可能存在绝对化/夸大表达：{abs_hits}")
+
+    # Move coverage: required moves should have non-empty content
+    move_ids = _coerce_int_list(move_plan.get("move_ids"))
+    seq = schema_ir.get("move_sequence") or []
+    by_id: dict[int, dict[str, Any]] = {}
+    for m in seq:
+        try:
+            mid = int(m.get("move_id"))
+        except Exception:
+            continue
+        by_id[mid] = m
+    required = [1, 4, 9]
+    for mid in required:
+        content = ""
+        if mid in by_id:
+            content = str(by_id[mid].get("content") or "").strip()
+        if not content:
+            issues.append(f"必选 move {mid} 缺少 content（1/4/9 必须写出可口播内容）。")
+
+    # If planner asked for specific moves, they should exist in schema move_sequence
+    missing_moves = [mid for mid in move_ids if mid not in by_id]
+    if missing_moves:
+        issues.append(f"schema.move_sequence 缺少规划 moves：{missing_moves}")
+
+    is_passed = len(issues) == 0
+    feedback = ""
+    if not is_passed:
+        feedback = (
+            "请严格按 Ten-move 输出 JSON：{filled_schema, final_copy_text}。\n"
+            "修复以下问题后重写：\n- " + "\n- ".join(issues)
+        )
+
+    # Gate recommendation (important to avoid infinite loops)
+    recommended_action = "proceed" if is_passed else "revise"
+    forced = False
+    forced_reason = ""
+    if (not is_passed) and iteration_count >= max_iterations:
+        # We have exhausted iteration budget; do not loop forever.
+        forced = True
+        recommended_action = "proceed"
+        forced_reason = f"已达到最大迭代次数 max_iterations={max_iterations}，强制进入评测/结束链路。"
+
+    result = {
+        "is_passed": is_passed,
+        "issues": issues,
+        "feedback": feedback,
+        "_meta": {
+            "iteration_count": iteration_count,
+            "max_iterations": max_iterations,
+            "recommended_action": recommended_action,
+            "forced_proceed": forced,
+            "forced_reason": forced_reason,
+        },
+    }
+    logger.info(f"✅ 规则验收完成: passed={is_passed}, issues={len(issues)}")
+    return {"verification_result": result}
+
+
+def should_proceed_after_verify(state: AgentState) -> str:
+    """Verify gating: fail fast to writing; pass to proofread."""
+    vr = state.get("verification_result") or {}
+    iteration_count = int(state.get("iteration_count", 0) or 0)
+    max_iterations = int(getattr(settings, "max_iterations", 3) or 3)
+
+    if isinstance(vr, dict) and vr.get("is_passed") is False:
+        if iteration_count >= max_iterations:
+            logger.warning(
+                f"⚠️ Verify 未通过但已达最大迭代 {iteration_count}/{max_iterations}，强制 proceed"
+            )
+            return "proceed"
+        logger.info("🔄 Verify 未通过，回写作修复")
+        return "revise"
+    logger.info("✅ Verify 通过，进入评测")
+    return "proceed"

@@ -43,23 +43,29 @@ def _manual_mermaid() -> str:
   breakdown[breakdown]
   simple_chat[simple_chat]
   analysis_output[analysis_output]
-
-  %% main copy flow
   analysis_report[analysis_report]
+
   reverse_engineer[reverse_engineer]
+  move_plan[move_plan]
   writing[writing]
+  verify[verify]
   proofread[proofread]
 
   END(((END)))
 
-  intent_analysis -->|copy_flow| breakdown
+  %% copy flow (prior-driven imitation)
+  intent_analysis -->|copy_flow| reverse_engineer
   intent_analysis -->|analysis_flow| breakdown
   intent_analysis -->|chat_flow| simple_chat
 
   breakdown -->|to_analysis_report| analysis_report
   breakdown -->|to_analysis_output| analysis_output
+  analysis_report --> reverse_engineer
 
-  analysis_report --> reverse_engineer --> writing --> proofread
+  %% main imitation chain
+  reverse_engineer --> move_plan --> writing --> verify
+  verify -->|proceed| proofread
+  verify -->|revise| writing
 
   proofread -->|continue| writing
   proofread -->|end| END

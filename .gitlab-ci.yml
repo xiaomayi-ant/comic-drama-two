@@ -1,0 +1,102 @@
+## GitLab CI/CD - copywriting-imitator
+#
+# 目标：
+# - Monorepo 架构：前端（React + Vite）+ 后端（Python 3.12 + FastAPI）
+# - 多阶段构建：前端构建 -> 后端构建 -> 打包镜像
+# - release-* 分支推送测试镜像；master 推送生产镜像
+#
+# 注意：
+# - DOCKER_USERNAME / DOCKER_PASSWORD 从 GitLab CI/CD Variables 注入（Masked/Protected）
+# - 使用 Docker-in-Docker (dind) 构建镜像
+
+stages:
+  - build-and-deploy
+
+variables:
+  GIT_DEPTH: 0
+  # 国内镜像源
+  PIP_INDEX_URL: "https://mirrors.aliyun.com/pypi/simple"
+  UV_INDEX_URL: "https://mirrors.aliyun.com/pypi/simple"
+  NPM_REGISTRY: "https://registry.npmmirror.com"
+  
+  # 镜像仓库
+  PROD_PROJECT_NAME: "mdsk-registry.cn-hangzhou.cr.aliyuncs.com/mindsync-prod/${CI_PROJECT_NAME}"
+  TEST_PROJECT_NAME: "mdsk-registry.cn-hangzhou.cr.aliyuncs.com/mindsync-test/${CI_PROJECT_NAME}"
+  REGISTRY_URL: "mdsk-registry.cn-hangzhou.cr.aliyuncs.com"
+  DOCKER_USERNAME: "杭州曼达斯克科技有限公司"
+  DOCKER_PASSWORD: "mdsk@jgpy2025!"
+  
+  # 缓存目录
+  UV_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/uv"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+cache:
+  key: "${CI_PROJECT_NAME}"
+  paths:
+    - .cache/uv
+    - frontend/node_modules/
+
+
+# ==========================================
+# 测试环境构建与部署（release-* 分支）
+# ==========================================
+build_and_deploy_test:
+  stage: build-and-deploy
+  image: docker:27
+  services:
+    - name: docker:27-dind
+  tags: 
+    - mdsk-python312
+  only:
+    - /^release-.*$/
+  variables:
+    MODE: "test"
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: "tcp://docker:2375"
+  before_script:
+    - docker version
+    - docker login --username="${DOCKER_USERNAME}" --password="${DOCKER_PASSWORD}" "${REGISTRY_URL}"
+  script:
+    - IMAGE_TAG="${MODE}-${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
+    - IMAGE_NAME="${TEST_PROJECT_NAME}:${IMAGE_TAG}"
+    - echo "Building ${IMAGE_NAME}"
+    - docker build --no-cache -t "${IMAGE_NAME}" .
+    - docker push "${IMAGE_NAME}"
+    - echo "✅ 测试镜像构建成功: ${IMAGE_NAME}"
+  after_script:
+    - docker logout "${REGISTRY_URL}"
+
+
+# ==========================================
+# 生产环境构建与部署（master 分支）
+# ==========================================
+build_and_deploy_production:
+  stage: build-and-deploy
+  image: docker:27
+  services:
+    - name: docker:27-dind
+  tags: 
+    - mdsk-python312
+  only:
+    - master
+  variables:
+    MODE: "prod"
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: "tcp://docker:2375"
+  before_script:
+    - docker version
+    - docker login --username="${DOCKER_USERNAME}" --password="${DOCKER_PASSWORD}" "${REGISTRY_URL}"
+  script:
+    - IMAGE_TAG="${MODE}-${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
+    - IMAGE_NAME="${PROD_PROJECT_NAME}:${IMAGE_TAG}"
+    - echo "Building ${IMAGE_NAME}"
+    - docker build --no-cache -t "${IMAGE_NAME}" .
+    - docker push "${IMAGE_NAME}"
+    - echo "✅ 生产镜像构建成功: ${IMAGE_NAME}"
+    # 可选：推送 latest 标签
+    - docker tag "${IMAGE_NAME}" "${PROD_PROJECT_NAME}:latest"
+    - docker push "${PROD_PROJECT_NAME}:latest"
+    - echo "✅ 已推送 latest 标签"
+  after_script:
+    - docker logout "${REGISTRY_URL}"
+

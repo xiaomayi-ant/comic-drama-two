@@ -65,10 +65,10 @@ class AgentState(TypedDict):
     """
     Agent 工作流状态定义
     
-    状态流转:
+    状态流转（仿写优先版本）:
     1. user_input → intent_analysis_node → intent_result
     2. 根据 intent 路由:
-       - copy_writing: breakdown → writing → proofread → (迭代或输出)
+       - copy_writing: reverse_engineer(prior) → move_plan(projection) → writing → verify → proofread → (迭代或输出)
        - copy_analysis: breakdown → 直接输出分析结果
        - simple_chat: 直接 LLM 回复
     """
@@ -97,8 +97,14 @@ class AgentState(TypedDict):
     # Move 规划输出（dynamic planning）
     move_plan: Optional[dict]
 
+    # 规则验收输出（deterministic verification）
+    verification_result: Optional[dict]
+
     # 写作节点输出 - 生成的文案草稿
     draft_copy: Optional[str]
+
+    # 写作节点元信息（解析模式/长度等）
+    writing_meta: Optional[dict]
 
     # 评测节点输出 - 评测结果
     proofread_result: Optional[dict]

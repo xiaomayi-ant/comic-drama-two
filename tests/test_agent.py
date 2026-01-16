@@ -69,3 +69,11 @@ class TestGraph:
         graph = create_agent_graph(with_memory=False)
         assert graph is not None
 
+    def test_state_has_verification_result_key(self):
+        """轻量约束：新链路应包含 verification_result 字段（用于规则验收门控）。"""
+        from src.agent.state import AgentState
+
+        # TypedDict 运行时不强校验，但我们至少确保类型注解层面存在该 key
+        annotations = getattr(AgentState, "__annotations__", {})
+        assert "verification_result" in annotations
+

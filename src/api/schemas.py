@@ -52,6 +52,9 @@ class CopywritingResponse(BaseModel):
     success: bool = Field(default=True, description="是否成功")
     final_copy: Optional[str] = Field(default=None, description="最终文案")
     draft_copy: Optional[str] = Field(default=None, description="草稿文案")
+    writing_meta: Optional[dict[str, Any]] = Field(
+        default=None, description="写作节点元信息（解析模式/长度等）"
+    )
     iteration_count: int = Field(default=0, description="迭代次数")
     intent_result: Optional[dict[str, Any]] = Field(
         default=None, description="意图分析结果"
@@ -70,6 +73,9 @@ class CopywritingResponse(BaseModel):
     )
     move_plan: Optional[dict[str, Any]] = Field(
         default=None, description="动态 move 规划产出（用于解释本次结构选择）"
+    )
+    verification_result: Optional[dict[str, Any]] = Field(
+        default=None, description="规则验收结果（用于控制迭代与解释失败原因）"
     )
     proofread_result: Optional[dict[str, Any]] = Field(
         default=None, description="评测结果"

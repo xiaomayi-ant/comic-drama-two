@@ -34,11 +34,13 @@ async def generate_copywriting(request: CopywritingRequest):
     """
     生成口播文案（同步接口）
     
-    工作流程：
-    1. 意图分析节点：判断用户意图（文案创作/分析/聊天）
-    2. 解析节点：分析用户输入的文案结构
-    3. 写作节点：基于分析结果生成文案
-    4. 评测节点：评估文案质量，不通过则迭代优化（最多3次）
+    工作流程（仿写优先版本）：
+    1. 意图分析节点：判断用户意图（仿写/分析/聊天）
+    2. 逆向工程节点：从参考口播中提取“可复用先验配置”（结构/风格/策略）
+    3. 规划节点：在先验上做约束投影（时长/素材缺失/合规），产出 move_plan
+    4. 写作节点：按 Ten-move schema 填充并渲染
+    5. 规则验收节点：确定性检查（must_include/must_avoid/必选 moves 等），失败则回写作迭代
+    6. 评测节点：LLM 评测与润色，通过或达到上限则输出
     """
     logger.info(f"收到文案生成请求, input_length={len(request.user_input)}")
     
@@ -175,7 +177,10 @@ async def analyze_copywriting(request: CopywritingRequest):
             "schema_ir": None,
             "analysis_report": None,
             "reverse_config": None,
+            "move_plan": None,
+            "verification_result": None,
             "draft_copy": None,
+            "writing_meta": None,
             "proofread_result": None,
             "final_copy": None,
             "artifact_paths": None,
