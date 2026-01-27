@@ -1,0 +1,175 @@
+{
+  "user_input": "来，给大家介绍我最近非常爱喝的一款葡萄酒，要是喝不惯干红那种又酸又涩的口感，你就试一下这个；这是一款半甜型的酒，不用醒可以直接喝，入口香香甜甜的，但又不会像甜型酒那么甜，不齁不腻；酒体很轻盈，闻上去就是非常清爽的水果甜味，有蓝莓、樱桃、黑李子，后面又带一点儿甘草的香气，整个口感像一块液体流动的丝绒蛋糕，香香软软的，很好入口，对新手非常友好，第一次喝红酒的，你就跟着我选这个~",
+  "user_instructions": "请对这段文案进行仿写：保持原有结构与节奏，表达更自然，避免抄袭，输出完整可用的新版本。",
+  "breakdown_result": null,
+  "analysis_report": null,
+  "reverse_config": {
+    "medium_guess": "live_stream",
+    "move_sequence": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "omitted_moves": [
+      10
+    ],
+    "move_fusion_notes": "多个感官描述与口感形容被融合在一起，形成整体感受的表达。",
+    "persuasion_strategy": {
+      "urgency_mode": "none",
+      "trust_signal": "none",
+      "objection_handling": "price"
+    },
+    "style_constraints": {
+      "max_sentence_length": 30,
+      "imperative_ratio": 0.2,
+      "tone": "亲切、口语化",
+      "lexical_notes": "使用大量形容词和比喻增强画面感"
+    },
+    "reusable_system_prompt": "生成一段直播带货口播文案，介绍一款适合新手的半甜型葡萄酒，强调口感清爽、入口顺滑，用生动比喻描述风味。"
+  },
+  "schema_ir": {
+    "schema_version": "promo_move_schema_v1",
+    "medium": "live_stream",
+    "language": "zh",
+    "product_context": {
+      "product_name": "半甜型葡萄酒",
+      "category": "酒类",
+      "target_audience": "红酒新手、不喜欢干红口感的人",
+      "core_problem": "干红太酸涩，甜酒又太腻",
+      "core_benefit": "入口顺滑、果香浓郁、适合新手",
+      "proof_points": [
+        "轻盈酒体",
+        "水果香气",
+        "不齁不腻"
+      ],
+      "offer": "限时优惠",
+      "cta_url": ""
+    },
+    "global_constraints": {
+      "max_chars": 800,
+      "tone": "friendly",
+      "brand_voice_notes": "",
+      "must_include_terms": [],
+      "must_avoid_terms": []
+    },
+    "spoken_constraints": {
+      "target_duration_sec": 60,
+      "delivery_style": "直播带货",
+      "line_break_rule": "尽量按口播停顿断句，每行不宜过长",
+      "compliance_notes": "避免绝对化/夸大/医疗功效承诺；不虚构权威背书；价格表述谨慎"
+    },
+    "move_sequence": [
+      {
+        "move_id": 1,
+        "move_name": "Headline",
+        "necessity": "obligatory",
+        "intent": "capture_attention",
+        "rhetorical_relation": "motivation",
+        "content": "来！今天给大家推荐一款我最近特别喜欢的葡萄酒，特别适合第一次喝红酒的朋友。"
+      },
+      {
+        "move_id": 2,
+        "move_name": "Targeting_the_Market",
+        "necessity": "optional",
+        "intent": "audience_alignment",
+        "rhetorical_relation": "background",
+        "content": "如果你觉得干红太酸涩，甜酒又太腻，那你一定要试试这个。"
+      },
+      {
+        "move_id": 3,
+        "move_name": "Justifying_by_Establishing_a_Niche",
+        "necessity": "optional",
+        "intent": "problem_gap_framing",
+        "rhetorical_relation": "contrast",
+        "content": "它不是那种又酸又涩的干红，也不是甜到齁的甜酒。"
+      },
+      {
+        "move_id": 4,
+        "move_name": "Detailing_the_Product_or_Service",
+        "necessity": "obligatory",
+        "intent": "value_explanation",
+        "rhetorical_relation": "enablement",
+        "content": "这是一款半甜型的酒，不用醒就可以直接喝。入口香香甜甜，但不会太甜，像一块流动的丝绒蛋糕，清爽又顺滑。"
+      },
+      {
+        "move_id": 5,
+        "move_name": "Establishing_Credentials",
+        "necessity": "optional",
+        "intent": "trust_building",
+        "rhetorical_relation": "evidence",
+        "content": ""
+      },
+      {
+        "move_id": 6,
+        "move_name": "Endorsements_or_Testimonials",
+        "necessity": "optional",
+        "intent": "social_proof",
+        "rhetorical_relation": "evidence",
+        "content": ""
+      },
+      {
+        "move_id": 7,
+        "move_name": "Offering_Incentives",
+        "necessity": "optional",
+        "intent": "value_amplification",
+        "rhetorical_relation": "enablement",
+        "content": "现在下单还有限时优惠，机会不多。"
+      },
+      {
+        "move_id": 8,
+        "move_name": "Using_Pressure_Tactics",
+        "necessity": "optional",
+        "intent": "urgency_creation",
+        "rhetorical_relation": "motivation",
+        "content": ""
+      },
+      {
+        "move_id": 9,
+        "move_name": "Soliciting_Response",
+        "necessity": "obligatory",
+        "intent": "action_trigger",
+        "rhetorical_relation": "enablement",
+        "content": "喜欢的小伙伴点进来看看，错过真的可惜！"
+      }
+    ],
+    "optional_extension": {
+      "link_button": {
+        "enabled": false,
+        "text": "",
+        "url": ""
+      }
+    }
+  },
+  "verification_result": {
+    "is_passed": false,
+    "issues": [
+      "可能存在绝对化/夸大表达：['最', '第一']"
+    ],
+    "feedback": "请严格按 Ten-move 输出 JSON：{filled_schema, final_copy_text}。\n修复以下问题后重写：\n- 可能存在绝对化/夸大表达：['最', '第一']",
+    "_meta": {
+      "iteration_count": 3,
+      "max_iterations": 3,
+      "recommended_action": "proceed",
+      "forced_proceed": true,
+      "forced_reason": "已达到最大迭代次数 max_iterations=3，强制进入评测/结束链路。"
+    }
+  },
+  "writing_meta": {
+    "parse_mode": "strict_envelope",
+    "had_envelope": true,
+    "draft_len": 172
+  },
+  "proofread_result": {
+    "is_passed": true,
+    "feedback": "文案整体结构清晰，语言生动形象，具有较强的吸引力。但部分表述略显口语化，可进一步优化以提升专业感和流畅度。建议在关键信息如‘半甜型’、‘不用醒’等处增加更明确的说明，同时注意语气的一致性。",
+    "refined_copy": "来！今天给大家推荐一款我最近特别喜欢的葡萄酒，非常适合第一次尝试红酒的朋友。如果你觉得干红太酸涩，甜酒又太腻，那你一定要试试这款。它既不是那种又酸又涩的干红，也不是甜到齁的甜酒，而是一款半甜型的酒，无需醒酒即可直接饮用。入口香甜顺滑，但不会过于甜腻，仿佛一块流动的丝绒蛋糕，清爽又细腻。现在下单还有限时优惠，机会难得。喜欢的小伙伴赶紧点进来看看，错过真的可惜！",
+    "quality_score": 8.0
+  },
+  "final_copy": "来！今天给大家推荐一款我最近特别喜欢的葡萄酒，非常适合第一次尝试红酒的朋友。如果你觉得干红太酸涩，甜酒又太腻，那你一定要试试这款。它既不是那种又酸又涩的干红，也不是甜到齁的甜酒，而是一款半甜型的酒，无需醒酒即可直接饮用。入口香甜顺滑，但不会过于甜腻，仿佛一块流动的丝绒蛋糕，清爽又细腻。现在下单还有限时优惠，机会难得。喜欢的小伙伴赶紧点进来看看，错过真的可惜！"
+}

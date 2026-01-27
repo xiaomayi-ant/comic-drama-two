@@ -88,6 +88,19 @@ class AgentState(TypedDict):
     # Ten-move schema IR（规划/中间层）
     schema_ir: Optional[dict]
 
+    # Pipeline switch: "v1" (ten-move imitation) or "v2" (skeleton v2 pipeline)
+    pipeline_version: Optional[str]
+
+    # v2 inputs
+    new_product_specs: Optional[dict]
+    clean_room: Optional[bool]
+
+    # v2 intermediate artifacts
+    preprocess_result: Optional[dict]
+    skeleton_v2: Optional[dict]
+    entity_mapping: Optional[dict]
+    qc_report: Optional[dict]
+
     # 面向口播的分析报告（analysis chain）
     analysis_report: Optional[str]
 

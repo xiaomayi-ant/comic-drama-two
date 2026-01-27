@@ -1,0 +1,187 @@
+{
+  "user_input": "每年立覆盖的要减肥，结果呢，健身房办卡等于拍照打卡。减肥餐吃两天就投降。还怪自己没出息，纯折腾自己。总觉得自律就得对自己狠一点，结果狠来狠去，只狠出了一身焦虑。看看李宗伟老师的5%的改变，才突然想通，咱坚持不下来不是没毅力，是目标定太离谱了。这本书牛的点就是他说微小的改变才具有可持续性。他不教你七天瘦十斤，这种反人类操作只给你十在招。想健身不用每天跑5公里，下楼走十分钟也是改变。想学习不用逼自己做8小时，每天多学20分钟就够了没有空洞大道理，全是能直接落地的小方法，读着就俩字，实用。别再被极致自律的毒鸡汤骗了，真正的改变从来不是一蹴而就的，这本5%的改变，让你在不知不觉中变好，不用委屈自己，也不用硬扛。",
+  "user_instructions": "请对这段文案进行仿写：保持原有结构与节奏，表达更自然，避免抄袭，输出完整可用的新版本。",
+  "breakdown_result": null,
+  "analysis_report": null,
+  "reverse_config": {
+    "medium_guess": "live_stream",
+    "move_sequence": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "omitted_moves": [],
+    "move_fusion_notes": "",
+    "persuasion_strategy": {
+      "urgency_mode": "none",
+      "trust_signal": "authority",
+      "objection_handling": "risk"
+    },
+    "style_constraints": {
+      "max_sentence_length": 25,
+      "imperative_ratio": 0.2,
+      "tone": "亲切自然",
+      "lexical_notes": "口语化、贴近生活"
+    },
+    "reusable_system_prompt": "用亲切自然的语气，分享实用小技巧，强调微小改变的重要性，避免空洞说教，适合直播带货场景。"
+  },
+  "schema_ir": {
+    "schema_version": "promo_move_schema_v1",
+    "medium": "live_stream",
+    "language": "zh",
+    "product_context": {
+      "product_name": "5%的改变",
+      "category": "自我提升/心理成长",
+      "target_audience": "想要改变但难以坚持的人群",
+      "core_problem": "总是设定太高目标，导致无法持续行动",
+      "core_benefit": "通过微小改变实现长期可持续的成长",
+      "proof_points": [
+        "不教极端方法",
+        "强调日常小动作也能带来改变",
+        "实用、可操作性强"
+      ],
+      "offer": "一本帮助你轻松改变的生活指南",
+      "cta_url": ""
+    },
+    "global_constraints": {
+      "max_chars": 800,
+      "tone": "friendly",
+      "brand_voice_notes": "",
+      "must_include_terms": [
+        "微小改变",
+        "持续成长",
+        "不用太狠"
+      ],
+      "must_avoid_terms": [
+        "七天瘦十斤",
+        "极致自律"
+      ]
+    },
+    "spoken_constraints": {
+      "target_duration_sec": 60,
+      "delivery_style": "直播带货",
+      "line_break_rule": "尽量按口播停顿断句，每行不宜过长",
+      "compliance_notes": "避免绝对化/夸大/医疗功效承诺；不虚构权威背书；价格表述谨慎"
+    },
+    "move_sequence": [
+      {
+        "move_id": 1,
+        "move_name": "Headline",
+        "necessity": "obligatory",
+        "intent": "capture_attention",
+        "rhetorical_relation": "motivation",
+        "content": "别再逼自己太狠了！真正的改变，其实可以很简单。"
+      },
+      {
+        "move_id": 2,
+        "move_name": "Targeting_the_Market",
+        "necessity": "optional",
+        "intent": "audience_alignment",
+        "rhetorical_relation": "background",
+        "content": "你是不是也这样？想减肥、想学习、想健身，但总坚持不了几天就放弃了？"
+      },
+      {
+        "move_id": 3,
+        "move_name": "Justifying_by_Establishing_a_Niche",
+        "necessity": "optional",
+        "intent": "problem_gap_framing",
+        "rhetorical_relation": "contrast",
+        "content": "不是你不够努力，而是我们一直在用错误的方式逼自己。"
+      },
+      {
+        "move_id": 4,
+        "move_name": "Detailing_the_Product_or_Service",
+        "necessity": "obligatory",
+        "intent": "value_explanation",
+        "rhetorical_relation": "enablement",
+        "content": "这本书讲的就是：微小改变，才真正能坚持下来。不用太狠，每天进步一点点，才是持续成长的关键。"
+      },
+      {
+        "move_id": 5,
+        "move_name": "Establishing_Credentials",
+        "necessity": "optional",
+        "intent": "trust_building",
+        "rhetorical_relation": "evidence",
+        "content": "作者李宗伟老师，就是从普通人出发，慢慢找到适合自己的方式。"
+      },
+      {
+        "move_id": 6,
+        "move_name": "Endorsements_or_Testimonials",
+        "necessity": "optional",
+        "intent": "social_proof",
+        "rhetorical_relation": "evidence",
+        "content": "很多人读完都发现，原来改变真的可以不那么痛苦。"
+      },
+      {
+        "move_id": 7,
+        "move_name": "Offering_Incentives",
+        "necessity": "optional",
+        "intent": "value_amplification",
+        "rhetorical_relation": "enablement",
+        "content": "现在入手这本书，就能拿到一套实用的小方法，帮你一步步变好。"
+      },
+      {
+        "move_id": 8,
+        "move_name": "Using_Pressure_Tactics",
+        "necessity": "optional",
+        "intent": "urgency_creation",
+        "rhetorical_relation": "motivation",
+        "content": ""
+      },
+      {
+        "move_id": 9,
+        "move_name": "Soliciting_Response",
+        "necessity": "obligatory",
+        "intent": "action_trigger",
+        "rhetorical_relation": "enablement",
+        "content": "点进来看看，也许这就是你一直需要的改变方式。"
+      },
+      {
+        "move_id": 10,
+        "move_name": "Brand_Logo_or_Signature",
+        "necessity": "optional",
+        "intent": "brand_identity",
+        "rhetorical_relation": "background",
+        "content": ""
+      }
+    ],
+    "optional_extension": {
+      "link_button": {
+        "enabled": false,
+        "text": "",
+        "url": ""
+      }
+    }
+  },
+  "verification_result": {
+    "is_passed": true,
+    "issues": [],
+    "feedback": "",
+    "_meta": {
+      "iteration_count": 2,
+      "max_iterations": 3,
+      "recommended_action": "proceed",
+      "forced_proceed": false,
+      "forced_reason": ""
+    }
+  },
+  "writing_meta": {
+    "parse_mode": "strict_envelope",
+    "had_envelope": true,
+    "draft_len": 229
+  },
+  "proofread_result": {
+    "is_passed": true,
+    "feedback": "文案整体表达清晰，但部分语句略显口语化，逻辑结构可以进一步优化。建议提升语言的正式性和感染力，增强说服力和可读性。",
+    "refined_copy": "别再逼自己太狠了！真正的改变，其实可以很简单。你是否也有这样的经历？想减肥、想学习、想健身，却总坚持不了几天就放弃了？其实不是你不够努力，而是我们一直在用错误的方式逼自己。这本书讲述的正是：微小的改变，才真正能坚持下来。不需要太狠，每天进步一点点，才是持续成长的关键。作者李宗伟老师，就是从普通人出发，逐渐找到了适合自己的方式。许多读者读完后都发现，原来改变真的可以不那么痛苦。现在入手这本书，就能获得一套实用的小方法，帮助你一步步变得更好。点击进入，也许这就是你一直需要的改变方式。",
+    "quality_score": 7.0
+  },
+  "final_copy": "别再逼自己太狠了！真正的改变，其实可以很简单。你是否也有这样的经历？想减肥、想学习、想健身，却总坚持不了几天就放弃了？其实不是你不够努力，而是我们一直在用错误的方式逼自己。这本书讲述的正是：微小的改变，才真正能坚持下来。不需要太狠，每天进步一点点，才是持续成长的关键。作者李宗伟老师，就是从普通人出发，逐渐找到了适合自己的方式。许多读者读完后都发现，原来改变真的可以不那么痛苦。现在入手这本书，就能获得一套实用的小方法，帮助你一步步变得更好。点击进入，也许这就是你一直需要的改变方式。"
+}

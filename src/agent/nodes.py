@@ -9,7 +9,7 @@ from langchain_community.chat_models import ChatTongyi
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig #可运行配置的类 
 from langchain_core.language_models.chat_models import BaseChatModel
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field #Base
 
 from src.agent.prompts import (
     COPYWRITING_BREAKDOWN_PROMPT,

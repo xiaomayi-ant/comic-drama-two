@@ -19,6 +19,15 @@ from src.agent.nodes import (
     verify_node,
     writing_node,
 )
+from src.agent.nodes_v2 import (
+    analyst_v2_node,
+    creator_v2_node,
+    entity_mapper_v2_node,
+    normalizer_v2_node,
+    preprocess_v2_node,
+    qc_v2_node,
+    should_proceed_after_qc,
+)
 from src.agent.state import AgentState, IntentType
 from src.core.config import settings
 from src.core.logger import get_logger
@@ -60,6 +69,14 @@ def create_agent_graph(with_memory: bool = True):
     workflow.add_node("verify", verify_node)
     workflow.add_node("proofread", proofread_node)
     workflow.add_node("simple_chat", simple_chat_node)
+
+    # v2 pipeline nodes
+    workflow.add_node("v2_preprocess", preprocess_v2_node)
+    workflow.add_node("v2_analyst", analyst_v2_node)
+    workflow.add_node("v2_normalizer", normalizer_v2_node)
+    workflow.add_node("v2_entity_mapper", entity_mapper_v2_node)
+    workflow.add_node("v2_creator", creator_v2_node)
+    workflow.add_node("v2_qc", qc_v2_node)
     
     # 分析流程结束节点（将 breakdown 结果转为 final_copy）
     def analysis_output_node(state: AgentState) -> dict:
@@ -79,15 +96,22 @@ def create_agent_graph(with_memory: bool = True):
     # ============================================================
     # 添加边 - 意图路由
     # ============================================================
+    # v1/v2 routing at entry
+    def route_entry(state: AgentState) -> str:
+        base = route_by_intent(state)
+        if base != "copy_flow":
+            return base
+        pv = (state.get("pipeline_version") or "v1").lower().strip()
+        return "copy_flow_v2" if pv == "v2" else "copy_flow"
+
     workflow.add_conditional_edges(
         "intent_analysis",
-        route_by_intent,
+        route_entry,
         {
-            # 仿写/创作：不再依赖 breakdown（避免分析口径污染），直接进入 prior → plan → write
             "copy_flow": "reverse_engineer",
-            # 分析：仍走 breakdown
+            "copy_flow_v2": "v2_preprocess",
             "analysis_flow": "breakdown",
-            "chat_flow": "simple_chat",    # 简单聊天
+            "chat_flow": "simple_chat",
         },
     )
     
@@ -127,6 +151,21 @@ def create_agent_graph(with_memory: bool = True):
         should_proceed_after_verify,
         {
             "revise": "writing",
+            "proceed": "proofread",
+        },
+    )
+
+    # v2 chain
+    workflow.add_edge("v2_preprocess", "v2_analyst")
+    workflow.add_edge("v2_analyst", "v2_normalizer")
+    workflow.add_edge("v2_normalizer", "v2_entity_mapper")
+    workflow.add_edge("v2_entity_mapper", "v2_creator")
+    workflow.add_edge("v2_creator", "v2_qc")
+    workflow.add_conditional_edges(
+        "v2_qc",
+        should_proceed_after_qc,
+        {
+            "revise": "v2_creator",
             "proceed": "proofread",
         },
     )
@@ -170,6 +209,9 @@ def run_agent(
     thread_id: str = "default",
     target_duration_sec: int | None = None,
     schema_json: dict | None = None,
+    pipeline_version: str | None = None,
+    new_product_specs: dict | None = None,
+    clean_room: bool | None = None,
 ) -> dict:
     """
     同步运行 Agent 工作流
@@ -202,6 +244,13 @@ def run_agent(
         "intent_result": None,
         "breakdown_result": None,
         "schema_ir": schema_ir,
+        "pipeline_version": (pipeline_version or "v1"),
+        "new_product_specs": new_product_specs,
+        "clean_room": clean_room,
+        "preprocess_result": None,
+        "skeleton_v2": None,
+        "entity_mapping": None,
+        "qc_report": None,
         "analysis_report": None,
         "reverse_config": None,
         "move_plan": None,
@@ -238,6 +287,10 @@ def run_agent(
             "intent_result": final_state.get("intent_result"),
             "breakdown_result": final_state.get("breakdown_result"),
             "schema_ir": final_state.get("schema_ir"),
+            "preprocess_result": final_state.get("preprocess_result"),
+            "skeleton_v2": final_state.get("skeleton_v2"),
+            "entity_mapping": final_state.get("entity_mapping"),
+            "qc_report": final_state.get("qc_report"),
             "analysis_report": final_state.get("analysis_report"),
             "reverse_config": final_state.get("reverse_config"),
             "move_plan": final_state.get("move_plan"),
@@ -264,6 +317,9 @@ async def run_agent_stream(
     thread_id: str = "default",
     target_duration_sec: int | None = None,
     schema_json: dict | None = None,
+    pipeline_version: str | None = None,
+    new_product_specs: dict | None = None,
+    clean_room: bool | None = None,
 ) -> AsyncGenerator[dict, None]:
     """
     异步流式运行 Agent 工作流
@@ -295,6 +351,13 @@ async def run_agent_stream(
         "intent_result": None,
         "breakdown_result": None,
         "schema_ir": schema_ir,
+        "pipeline_version": (pipeline_version or "v1"),
+        "new_product_specs": new_product_specs,
+        "clean_room": clean_room,
+        "preprocess_result": None,
+        "skeleton_v2": None,
+        "entity_mapping": None,
+        "qc_report": None,
         "analysis_report": None,
         "reverse_config": None,
         "move_plan": None,
@@ -331,6 +394,12 @@ async def run_agent_stream(
                     "reverse_engineer",
                     "move_plan",
                     "writing",
+                    "v2_preprocess",
+                    "v2_analyst",
+                    "v2_normalizer",
+                    "v2_entity_mapper",
+                    "v2_creator",
+                    "v2_qc",
                     "proofread",
                     "simple_chat",
                 ]:
@@ -349,6 +418,12 @@ async def run_agent_stream(
                     "reverse_engineer",
                     "move_plan",
                     "writing",
+                    "v2_preprocess",
+                    "v2_analyst",
+                    "v2_normalizer",
+                    "v2_entity_mapper",
+                    "v2_creator",
+                    "v2_qc",
                     "proofread",
                     "simple_chat",
                 ]:

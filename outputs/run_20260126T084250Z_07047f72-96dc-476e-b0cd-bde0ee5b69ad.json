@@ -1,0 +1,181 @@
+{
+  "user_input": "吃了一个月了，才发现这不是牛肉干啊～这是猪里脊做的猪肉干，香辣香辣的，特别过瘾。上面裹满了辣椒粉，云贵川的人，应该都懂这种辣椒面的威力；\n一到晚上就嘴巴馋的，真的可以试一下这个；它是用猪里脊烘干了36个小时，吃起来非常酥脆，一咬一咬的，会出来那种汁水，特别香；\n配料表比较干净，只有五六位，都是看得懂的日常调味料；蛋白质含量比较高，每100g的蛋白质含量是58g，大约是牛奶的17倍；一共有3个口味，原味、斯哈辣、芥末；\n一盒39.9元，直播间立减10元，到手只要29.9元；吃起来酥、脆、香、辣，解馋又过瘾，真的太爽了",
+  "user_instructions": "请对这段文案进行仿写：保持原有结构与节奏，表达更自然，避免抄袭，输出完整可用的新版本。",
+  "breakdown_result": null,
+  "analysis_report": null,
+  "reverse_config": {
+    "medium_guess": "live_stream",
+    "move_sequence": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "omitted_moves": [
+      9,
+      10
+    ],
+    "move_fusion_notes": "多个卖点被融合在一段描述中，如产品成分、口感、价格、口味选择等",
+    "persuasion_strategy": {
+      "urgency_mode": "time_bound",
+      "trust_signal": "social_proof",
+      "objection_handling": "price"
+    },
+    "style_constraints": {
+      "max_sentence_length": 30,
+      "imperative_ratio": 0.3,
+      "tone": "亲切活泼",
+      "lexical_notes": "使用口语化词汇，如'香辣香辣的'、'特别过瘾'、'一咬一咬的'等"
+    },
+    "reusable_system_prompt": "用生动口语化表达介绍产品，突出口感、成分、价格优势，结合地域特色和用户痛点，营造紧迫感。"
+  },
+  "schema_ir": {
+    "schema_version": "promo_move_schema_v1",
+    "medium": "live_stream",
+    "language": "zh",
+    "product_context": {
+      "product_name": "香辣猪里脊肉干",
+      "category": "休闲零食",
+      "target_audience": "爱吃辣、喜欢解馋的上班族和学生",
+      "core_problem": "晚上嘴馋没得吃，又怕胖又怕不健康",
+      "core_benefit": "解馋又营养，低脂高蛋白",
+      "proof_points": [
+        "36小时低温烘干",
+        "58g/100g蛋白质",
+        "只有5-6种配料"
+      ],
+      "offer": "直播间立减10元，仅需29.9元",
+      "cta_url": ""
+    },
+    "global_constraints": {
+      "max_chars": 800,
+      "tone": "亲切活泼",
+      "brand_voice_notes": "",
+      "must_include_terms": [
+        "香辣",
+        "酥脆",
+        "解馋",
+        "高蛋白"
+      ],
+      "must_avoid_terms": [
+        "绝对化",
+        "医疗功效"
+      ]
+    },
+    "spoken_constraints": {
+      "target_duration_sec": 60,
+      "delivery_style": "直播带货",
+      "line_break_rule": "尽量按口播停顿断句，每行不宜过长",
+      "compliance_notes": "避免绝对化/夸大/医疗功效承诺；不虚构权威背书；价格表述谨慎"
+    },
+    "move_sequence": [
+      {
+        "move_id": 1,
+        "move_name": "Headline",
+        "necessity": "obligatory",
+        "intent": "capture_attention",
+        "rhetorical_relation": "motivation",
+        "content": "姐妹们！你们知道吗？这根本不是牛肉干，是猪里脊做的猪肉干！"
+      },
+      {
+        "move_id": 2,
+        "move_name": "Targeting_the_Market",
+        "necessity": "optional",
+        "intent": "audience_alignment",
+        "rhetorical_relation": "background",
+        "content": "晚上嘴馋的小伙伴，真的要试试这个！"
+      },
+      {
+        "move_id": 3,
+        "move_name": "Justifying_by_Establishing_a_Niche",
+        "necessity": "optional",
+        "intent": "problem_gap_framing",
+        "rhetorical_relation": "contrast",
+        "content": "它不是普通肉干，是用猪里脊做出来的，香辣过瘾，一咬就爆汁！"
+      },
+      {
+        "move_id": 4,
+        "move_name": "Detailing_the_Product_or_Service",
+        "necessity": "obligatory",
+        "intent": "value_explanation",
+        "rhetorical_relation": "enablement",
+        "content": "36小时低温烘干，口感酥脆，配料干净，只有五六个日常调味料。蛋白质含量高达58g/100g，比牛奶还高17倍，解馋又高蛋白！"
+      },
+      {
+        "move_id": 5,
+        "move_name": "Establishing_Credentials",
+        "necessity": "optional",
+        "intent": "trust_building",
+        "rhetorical_relation": "evidence",
+        "content": ""
+      },
+      {
+        "move_id": 6,
+        "move_name": "Endorsements_or_Testimonials",
+        "necessity": "optional",
+        "intent": "social_proof",
+        "rhetorical_relation": "evidence",
+        "content": ""
+      },
+      {
+        "move_id": 7,
+        "move_name": "Offering_Incentives",
+        "necessity": "optional",
+        "intent": "value_amplification",
+        "rhetorical_relation": "enablement",
+        "content": "现在直播间下单立减10元，只要29.9元！"
+      },
+      {
+        "move_id": 8,
+        "move_name": "Using_Pressure_Tactics",
+        "necessity": "optional",
+        "intent": "urgency_creation",
+        "rhetorical_relation": "motivation",
+        "content": "库存不多了，手慢无！"
+      },
+      {
+        "move_id": 9,
+        "move_name": "Soliciting_Response",
+        "necessity": "obligatory",
+        "intent": "action_trigger",
+        "rhetorical_relation": "enablement",
+        "content": "点进直播间看看，真的太爽了！"
+      }
+    ],
+    "optional_extension": {
+      "link_button": {
+        "enabled": false,
+        "text": "",
+        "url": ""
+      }
+    }
+  },
+  "verification_result": {
+    "is_passed": true,
+    "issues": [],
+    "feedback": "",
+    "_meta": {
+      "iteration_count": 2,
+      "max_iterations": 3,
+      "recommended_action": "proceed",
+      "forced_proceed": false,
+      "forced_reason": ""
+    }
+  },
+  "writing_meta": {
+    "parse_mode": "strict_envelope",
+    "had_envelope": true,
+    "draft_len": 182
+  },
+  "proofread_result": {
+    "is_passed": true,
+    "feedback": "文案整体结构清晰，信息传达明确，语言生动有吸引力。建议优化部分重复表达，如“真的”使用频率过高，可适当减少以提升语言质感。同时注意标点符号的规范使用，例如感叹号过多可适度调整，使阅读节奏更自然。",
+    "refined_copy": "姐妹们！你们知道吗？这根本不是牛肉干，而是用猪里脊制作的猪肉干！晚上嘴馋的小伙伴一定要试试这个！它不是普通的肉干，而是选用猪里脊制作，香辣过瘾，一咬就爆汁。经过36小时低温烘干，口感酥脆，配料干净，只有五六个日常调味料。蛋白质含量高达58g/100g，比牛奶还高17倍，解馋又高蛋白！现在直播间下单立减10元，仅需29.9元！库存不多了，手慢无！点击进入直播间看看，真的太爽了！",
+    "quality_score": 8.5
+  },
+  "final_copy": "姐妹们！你们知道吗？这根本不是牛肉干，而是用猪里脊制作的猪肉干！晚上嘴馋的小伙伴一定要试试这个！它不是普通的肉干，而是选用猪里脊制作，香辣过瘾，一咬就爆汁。经过36小时低温烘干，口感酥脆，配料干净，只有五六个日常调味料。蛋白质含量高达58g/100g，比牛奶还高17倍，解馋又高蛋白！现在直播间下单立减10元，仅需29.9元！库存不多了，手慢无！点击进入直播间看看，真的太爽了！"
+}

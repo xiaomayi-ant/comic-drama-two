@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
         proxy: {
           // 本地开发：前端 /api -> 后端 http://127.0.0.1:8000/api
           '/api': {
-            target: 'http://127.0.0.1:8000',
+            target: 'http://127.0.0.1:8003',
             changeOrigin: true,
           },
         },

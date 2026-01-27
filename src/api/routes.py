@@ -47,6 +47,10 @@ async def generate_copywriting(request: CopywritingRequest):
     # 生成线程 ID
     thread_id = request.thread_id or str(uuid.uuid4())
 
+    # v2 dual-mode:
+    # - if new_product_specs is provided: transfer mode (cross-category / new product grounding)
+    # - if not provided: imitate mode (same-product imitation; backend will best-effort auto-extract grounding)
+
     # 目标时长：如果用户没写入指令，则补一条轻量提示，便于下游节点解析
     user_instructions = request.user_instructions
     if request.target_duration_sec and (not user_instructions or "秒" not in user_instructions):
@@ -66,6 +70,9 @@ async def generate_copywriting(request: CopywritingRequest):
             thread_id=thread_id,
             target_duration_sec=request.target_duration_sec,
             schema_json=request.schema_json,
+            pipeline_version=request.pipeline_version,
+            new_product_specs=request.new_product_specs,
+            clean_room=request.clean_room,
         )
         
         if result["success"]:
@@ -105,6 +112,8 @@ async def generate_copywriting_stream(request: CopywritingRequest):
     # 生成线程 ID
     thread_id = request.thread_id or str(uuid.uuid4())
 
+    # v2 dual-mode: allow missing new_product_specs (imitate mode)
+
     user_instructions = request.user_instructions
     if request.target_duration_sec and (not user_instructions or "秒" not in user_instructions):
         suffix = f"目标时长约{request.target_duration_sec}秒"
@@ -124,6 +133,9 @@ async def generate_copywriting_stream(request: CopywritingRequest):
                 thread_id=thread_id,
                 target_duration_sec=request.target_duration_sec,
                 schema_json=request.schema_json,
+                pipeline_version=request.pipeline_version,
+                new_product_specs=request.new_product_specs,
+                clean_room=request.clean_room,
             ):
                 # 格式化为 SSE
                 event_data = json.dumps(event, ensure_ascii=False)

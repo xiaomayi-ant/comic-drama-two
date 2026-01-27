@@ -36,6 +36,20 @@ class CopywritingRequest(BaseModel):
         description="可选：直接传入 Ten-move schema IR（中间层），则跳过模板生成",
     )
 
+    # v2 pipeline controls
+    pipeline_version: Optional[str] = Field(
+        default="v1",
+        description='可选：流水线版本，"v1"=Ten-move；"v2"=Skeleton v2（move_step4）',
+    )
+    clean_room: Optional[bool] = Field(
+        default=False,
+        description="v2 可选：Clean Room 模式（Creator 看不到 source_span/原文片段）",
+    )
+    new_product_specs: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="v2 可选：新产品结构化事实（用于实体映射与事实锚定）。为空则进入 v2 仿写模式（同品类/同商品）；提供则进入 v2 迁移模式（跨品类/换商品）。建议包含 product_name/category/core_benefit/proof_points/offer 等",
+    )
+
     debug_node_io: Optional[bool] = Field(
         default=None,
         description="可选：本次请求强制开启/关闭节点 IO 调试日志（优先于环境变量）",
@@ -65,6 +79,11 @@ class CopywritingResponse(BaseModel):
     schema_ir: Optional[dict[str, Any]] = Field(
         default=None, description="Ten-move schema IR（填充后）"
     )
+    # v2 artifacts (optional)
+    preprocess_result: Optional[dict[str, Any]] = Field(default=None, description="v2 预处理产物")
+    skeleton_v2: Optional[dict[str, Any]] = Field(default=None, description="v2 Skeleton IR（标准化后）")
+    entity_mapping: Optional[dict[str, Any]] = Field(default=None, description="v2 实体槽位映射结果")
+    qc_report: Optional[dict[str, Any]] = Field(default=None, description="v2 质检报告（用于回放/返工）")
     analysis_report: Optional[str] = Field(
         default=None, description="口播向结构分析报告"
     )
