@@ -44,8 +44,8 @@ services:
     restart: unless-stopped
     networks:
       - writer2-network
-    volumes:
-      - frontend-static:/usr/share/nginx/html
+    # volumes:
+    #   - frontend-static:/usr/share/nginx/html
 
   # ==========================================
   # 反向代理 + HTTPS (Caddy)
@@ -76,8 +76,8 @@ volumes:
     driver: local
   backend-outputs:
     driver: local
-  frontend-static:
-    driver: local
+  # frontend-static:
+  #   driver: local
   caddy-data:
     driver: local
 
