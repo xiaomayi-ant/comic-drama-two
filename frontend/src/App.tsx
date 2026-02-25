@@ -584,16 +584,6 @@ export default function App() {
             <button className="text-xs text-gray-400 hover:text-primary transition-colors">全部</button>
           </div>
           <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-4 space-y-1">
-            {[
-              { icon: MessageSquare, text: '张三丰大战张无忌剧本' },
-              { icon: ImageIcon, text: '未来主义跑车设计概念' },
-              { icon: FileText, text: '产品发布会文案草稿' },
-            ].map((item, i) => (
-              <div key={i} className="group flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors text-sm text-gray-600 dark:text-gray-400">
-                <item.icon size={18} className="text-gray-400" />
-                <span className="truncate">{item.text}</span>
-              </div>
-            ))}
           </div>
         </div>
 
@@ -642,11 +632,8 @@ export default function App() {
                   className="text-center mb-12"
                 >
                   <h1 className="text-4xl md:text-5xl font-semibold mb-4 tracking-tight">
-                    嗨 <span className="text-primary">user523615...</span>！你的创作空间已就绪。
+                    你好，你的创作空间已就绪。
                   </h1>
-                  <p className="text-xl text-gray-500 dark:text-gray-400 font-light">
-                    小云雀，你的全能AI创作助手
-                  </p>
                 </motion.div>
 
                 {/* Input Area (Hero) */}

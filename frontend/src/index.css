@@ -11,6 +11,13 @@
   body {
     @apply font-sans antialiased;
   }
+
+  html {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
 }
 
 @layer components {
@@ -22,5 +29,11 @@
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
     @apply bg-gray-200 dark:bg-gray-800 rounded-full;
+  }
+
+  /* iOS 触摸优化 */
+  button, a, textarea {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 }
