@@ -2,10 +2,11 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Copywriting Fronter (Vite)
+# Run and deploy your AI Studio app
 
-本前端不再直连 Gemini（无需 `GEMINI_API_KEY`），而是调用后端 `copywriting-assistant-2` 的接口：
-- `POST /api/v1/generate`
+This contains everything you need to run your app locally.
+
+View your app in AI Studio: https://ai.studio/apps/b06862eb-7116-42f5-82e3-d852b4913636
 
 ## Run Locally
 
@@ -14,7 +15,6 @@
 
 1. Install dependencies:
    `npm install`
-2. Start backend (from `copywriting-assistant-2`):
-   `python main.py --serve`  (默认 `http://127.0.0.1:8000`)
-3. Run the frontend:
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
    `npm run dev`

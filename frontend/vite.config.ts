@@ -1,27 +1,30 @@
-import path from 'path';
-import { defineConfig } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
+import {defineConfig, loadEnv} from 'vite';
 
-export default defineConfig(({ mode }) => {
-    return {
-      // build 后静态资源默认从 /fronter/ 下加载（对应后端 StaticFiles mount）
-      base: '/fronter/',
-      server: {
-        port: 3000,
-        host: '0.0.0.0',
-        proxy: {
-          // 本地开发：前端 /api -> 后端 http://127.0.0.1:8000/api
-          '/api': {
-            target: 'http://127.0.0.1:8003',
-            changeOrigin: true,
-          },
+export default defineConfig(({mode}) => {
+  const env = loadEnv(mode, '.', '');
+  return {
+    plugins: [react(), tailwindcss()],
+    define: {
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+    },
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, '.'),
+      },
+    },
+    server: {
+      // HMR is disabled in AI Studio via DISABLE_HMR env var.
+      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      hmr: process.env.DISABLE_HMR !== 'true',
+      proxy: {
+        '/api/v1': {
+          target: 'http://localhost:8000',
+          changeOrigin: true,
         },
       },
-      plugins: [react()],
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '.'),
-        }
-      }
-    };
+    },
+  };
 });

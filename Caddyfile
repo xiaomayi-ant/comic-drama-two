@@ -1,0 +1,3 @@
+ai.erswxn.cn, sumoer.chat {
+    reverse_proxy writer2-frontend:80
+}

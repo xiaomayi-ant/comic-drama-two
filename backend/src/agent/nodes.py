@@ -18,6 +18,7 @@ from src.agent.prompts import (
     TEN_MOVE_LIVE_GEN_PROMPT,
     TEN_MOVE_LIVE_INV_PROMPT,
     TEN_MOVE_LIVE_PLAN_PROMPT,
+    SCRIPT_GENERATION_PROMPT,
 )
 from src.agent.state import (
     AgentState,
@@ -109,10 +110,13 @@ def get_llm(temperature: Optional[float] = None) -> BaseChatModel:
     else:
         # 默认使用 ChatTongyi
         logger.info(f"使用 DashScope LLM: model={settings.model_name}")
-        return ChatTongyi(
-            model=settings.model_name,
-            temperature=temp,
-        )
+        kwargs: dict[str, Any] = {
+            "model": settings.model_name,
+            "temperature": temp,
+        }
+        if settings.dashscope_base_url:
+            kwargs["base_url"] = settings.dashscope_base_url
+        return ChatTongyi(**kwargs)
 
 
 # ============================================================
@@ -735,6 +739,30 @@ def writing_node(state: AgentState, config: RunnableConfig) -> dict[str, Any]:
     try:
         llm = get_llm()
         
+        # 检查是否使用剧本生成模式
+        script_config = state.get("script_config")
+        if script_config:
+            # 使用剧本生成 prompt
+            script_prompt = SCRIPT_GENERATION_PROMPT.format(
+                RATIO=script_config.get("ratio", "16:9"),
+                STYLE=script_config.get("style", "动漫风"),
+                DURATION=script_config.get("duration", "系统推荐"),
+                NARRATOR=script_config.get("narrator", "需要旁白"),
+                MOOD=script_config.get("mood", "温馨感人"),
+                USER_INPUT=user_input,
+            )
+            response = llm.invoke(
+                [
+                    SystemMessage(content=script_prompt),
+                ],
+                config=config,
+            )
+            raw_text = _to_text(getattr(response, "content", response))
+            if settings.debug_llm_io:
+                _dbg("script_writing.llm_raw", raw_text[:3000])
+            # 剧本模式下直接返回 final_copy，跳过 verify 验证
+            return {"draft_copy": raw_text, "final_copy": raw_text, "writing_meta": {"mode": "script"}}
+        
         # 普通调用（不用 with_structured_output，避免 ChatTongyi 解析 list content 报错）
         response = llm.invoke(
             [
@@ -826,6 +854,19 @@ def proofread_node(state: AgentState, config: Optional[RunnableConfig] = None) -
     使用 with_structured_output 确保返回格式正确
     """
     logger.info("🔍 执行评测节点 (Proofread Node)")
+    
+    # 如果已有 final_copy（剧本模式），直接通过
+    final_copy = state.get("final_copy")
+    if final_copy:
+        logger.info("✅ 剧本模式，跳过评测")
+        return {
+            "proofread_result": {
+                "is_passed": True,
+                "feedback": "剧本模式自动通过评测",
+                "quality_score": 10.0,
+            },
+            "final_copy": final_copy,
+        }
     
     draft_copy = state.get("draft_copy")
     iteration_count = state.get("iteration_count", 0)
@@ -1118,6 +1159,18 @@ def verify_node(state: AgentState) -> dict[str, Any]:
     """
     logger.info("🧪 执行规则验收节点 (Verify Node)")
 
+    # 如果有 final_copy（剧本模式），直接通过验证
+    final_copy = state.get("final_copy")
+    if final_copy:
+        logger.info("✅ 剧本模式，跳过 verify 验证")
+        return {
+            "verification_result": {
+                "is_passed": True,
+                "issues": [],
+                "feedback": "剧本模式自动通过",
+            }
+        }
+    
     draft = (state.get("draft_copy") or "").strip()
     schema_ir = state.get("schema_ir") or {}
     move_plan = state.get("move_plan") or {}

@@ -1,0 +1,89 @@
+services:
+  # ==========================================
+  # 后端 API 服务 (FastAPI + LangGraph)
+  # ==========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: writer2-backend
+    env_file:
+      - ./backend/.env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend-data:/app/data
+      - backend-logs:/app/logs
+      - backend-outputs:/app/outputs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - writer2-network
+
+  # ==========================================
+  # 前端 Web 服务 (React + Nginx)
+  # ==========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: writer2-frontend
+    expose:
+      - "80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - writer2-network
+    volumes:
+      - frontend-static:/usr/share/nginx/html
+
+  # ==========================================
+  # 反向代理 + HTTPS (Caddy)
+  # ==========================================
+  caddy:
+    image: caddy:2-alpine
+    container_name: writer2-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+    depends_on:
+      frontend:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - writer2-network
+
+# ==========================================
+# 数据卷
+# ==========================================
+volumes:
+  backend-data:
+    driver: local
+  backend-logs:
+    driver: local
+  backend-outputs:
+    driver: local
+  frontend-static:
+    driver: local
+  caddy-data:
+    driver: local
+
+# ==========================================
+# 网络
+# ==========================================
+networks:
+  writer2-network:
+    driver: bridge

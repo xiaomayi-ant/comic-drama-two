@@ -61,22 +61,13 @@ class ProofreadResult(BaseModel):
     quality_score: float = Field(default=0.0, ge=0.0, le=10.0, description="质量评分")
 
 
-class AgentState(TypedDict):
+class AgentState(TypedDict, total=False):
     """
-    Agent 工作流状态定义
-    
-    状态流转（仿写优先版本）:
-    1. user_input → intent_analysis_node → intent_result
-    2. 根据 intent 路由:
-       - copy_writing: reverse_engineer(prior) → move_plan(projection) → writing → verify → proofread → (迭代或输出)
-       - copy_analysis: breakdown → 直接输出分析结果
-       - simple_chat: 直接 LLM 回复
+    Agent 工作流状态定义（TypedDict，total=False 表示所有字段可选）
     """
 
-    # 用户原始输入
+    # 用户输入
     user_input: str
-
-    # 用户额外指令（可选，用于指导写作方向）
     user_instructions: Optional[str]
 
     # 意图分析结果
@@ -136,3 +127,6 @@ class AgentState(TypedDict):
 
     # 错误信息（用于异常处理）
     error: Optional[str]
+
+    # 剧本生成配置（视频比例、风格、情绪等）
+    script_config: Optional[dict]

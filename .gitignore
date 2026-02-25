@@ -5,6 +5,7 @@ env/
 
 # Environment Variables
 .env
+backend/.env
 
 # Python
 __pycache__/
@@ -35,6 +36,12 @@ mdm/
 # Logs
 logs/
 *.log
+
+# Database
+data/
+*.db
+*.sqlite
+*.sqlite3
 
 # IDE
 .idea/

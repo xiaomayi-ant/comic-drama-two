@@ -16,6 +16,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+        env_file_dir=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), ""),
     )
 
     # LLM 提供商选择：dashscope | openai
@@ -27,6 +28,9 @@ class Settings(BaseSettings):
     # 通义千问配置
     dashscope_api_key: str = Field(
         default="", description="DashScope API Key"
+    )
+    dashscope_base_url: str = Field(
+        default="", description="DashScope Base URL（如区域不同可自定义，默认 https://dashscope.aliyuncs.com）"
     )
     
     # OpenAI 配置

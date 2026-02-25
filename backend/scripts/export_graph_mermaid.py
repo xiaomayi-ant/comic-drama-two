@@ -16,7 +16,11 @@ import argparse
 import ast
 import os
 import sys
+import logging
 from typing import Any
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger(__name__)
 
 
 def _project_root() -> str:
@@ -222,9 +226,9 @@ def main() -> int:
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(content)
-        print(out_path)
+        logger.info(out_path)
     else:
-        print(content)
+        logger.info(content)
 
     return 0
 

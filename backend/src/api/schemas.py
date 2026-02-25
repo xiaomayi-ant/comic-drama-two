@@ -114,9 +114,113 @@ class HealthResponse(BaseModel):
 
 class StreamEvent(BaseModel):
     """流式事件"""
-    
+
     type: str = Field(description="事件类型: node_start, node_end, token, done, error")
     node: Optional[str] = Field(default=None, description="节点名称")
     content: Optional[str] = Field(default=None, description="token 内容")
     output: Optional[dict[str, Any]] = Field(default=None, description="节点输出")
+    error: Optional[str] = Field(default=None, description="错误信息")
+
+
+# ============================================================================
+# 小说生成 API 模型
+# ============================================================================
+
+
+class NovelGenerationRequest(BaseModel):
+    """小说/短故事生成请求"""
+
+    model_config = {"str_strip_whitespace": True}
+
+    user_input: str = Field(
+        ...,
+        min_length=5,
+        description="故事概念或主题（e.g., '关于失去和重新开始的故事'）",
+    )
+    reference_novel_title: str = Field(
+        ...,
+        min_length=1,
+        description="参考小说名称（e.g., '诡秘之主'）",
+    )
+    user_style: Optional[str] = Field(
+        default=None,
+        description="可选：故事风格要求（e.g., '温暖、治愈', '冒险、奇幻'）",
+    )
+    target_chapters: int = Field(
+        default=5,
+        ge=1,
+        le=50,
+        description="目标章数（默认5章，最多50章）",
+    )
+    thread_id: Optional[str] = Field(
+        default=None,
+        description="会话 ID（用于记忆和追踪）",
+    )
+
+
+class NovelGenerationResponse(BaseModel):
+    """小说/短故事生成响应"""
+
+    success: bool = Field(default=True, description="是否成功")
+    story_title: Optional[str] = Field(default=None, description="生成的故事标题")
+    final_story: Optional[str] = Field(default=None, description="最终的完整故事")
+    chapters_count: int = Field(default=0, description="实际生成的章数")
+    iterations: int = Field(default=0, description="总迭代次数")
+    move_codebook: Optional[dict[str, Any]] = Field(
+        default=None, description="提取的 Move Codebook"
+    )
+    story_ir: Optional[dict[str, Any]] = Field(
+        default=None, description="故事规划 IR（中间表示）"
+    )
+    error: Optional[str] = Field(default=None, description="错误信息")
+
+
+class ChatRequest(BaseModel):
+    """对话请求（用于配置下发）"""
+
+    model_config = {"str_strip_whitespace": True}
+
+    user_input: str = Field(
+        ...,
+        min_length=1,
+        description="用户输入的创作需求",
+    )
+    thread_id: Optional[str] = Field(
+        default=None,
+        description="会话线程 ID",
+    )
+
+
+class ConfigSubmitRequest(BaseModel):
+    """配置表单提交请求"""
+
+    model_config = {"str_strip_whitespace": True}
+
+    thread_id: str = Field(
+        ...,
+        description="会话线程 ID",
+    )
+    user_input: str = Field(
+        ...,
+        min_length=1,
+        description="用户原始输入",
+    )
+    selections: dict[str, str] = Field(
+        ...,
+        description="用户选择的配置项，如 {'target_duration': '30', 'ratio': '16:9', 'style': 'anime'}",
+    )
+
+
+class NovelStreamEvent(BaseModel):
+    """小说生成流式事件"""
+
+    type: str = Field(
+        description="事件类型: node_start, node_end, progress, token, done, error"
+    )
+    node: Optional[str] = Field(default=None, description="节点名称")
+    chapter: Optional[int] = Field(default=None, description="章节号（progress 事件用）")
+    text_snippet: Optional[str] = Field(
+        default=None, description="文本片段预览（progress 事件用）"
+    )
+    content: Optional[str] = Field(default=None, description="token 内容（token 事件用）")
     error: Optional[str] = Field(default=None, description="错误信息")

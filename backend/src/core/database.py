@@ -1,0 +1,248 @@
+"""数据库模型 - SQLite 存储"""
+
+import json
+import os
+import uuid
+from datetime import datetime
+from typing import Optional
+
+from sqlalchemy import Column, String, Text, Integer, Float, JSON, DateTime, create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
+
+Base = declarative_base()
+
+
+class MoveCodebookDB(Base):
+    """Move Codebook 存储模型"""
+    __tablename__ = "move_codebooks"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    source_novel = Column(String(200), nullable=False, index=True)
+    source_author = Column(String(100))
+    move_id = Column(Integer, nullable=False)
+    name = Column(String(100), nullable=False)
+    name_cn = Column(String(100))
+    description = Column(Text)
+    description_cn = Column(Text)
+    emotional_beats = Column(JSON, default=list)
+    core_idea = Column(Text)
+    chapters = Column(JSON, default=list)
+    estimated_words = Column(JSON)
+    source_excerpts = Column(JSON, default=list)
+    story_framework = Column(String(200))
+    pacing = Column(JSON)
+    raw_codebook = Column(JSON)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<MoveCodebook {self.source_novel}:{self.move_id}:{self.name}>"
+
+
+class StoryIRDB(Base):
+    """Story IR 存储模型"""
+    __tablename__ = "story_irs"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    title = Column(String(200), nullable=False)
+    concept = Column(Text)
+    chapters = Column(JSON, default=list)
+    reference_codebook_id = Column(String(36))
+    reference_novel = Column(String(200))
+    total_chapters = Column(Integer)
+    total_words = Column(Integer)
+    status = Column(String(50), default="planning")
+    thread_id = Column(String(100), index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<StoryIR {self.title}>"
+
+
+class GeneratedChapterDB(Base):
+    """生成的章节内容存储模型"""
+    __tablename__ = "generated_chapters"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    story_ir_id = Column(String(36), nullable=False, index=True)
+    chapter_num = Column(Integer, nullable=False)
+    title = Column(String(200))
+    content = Column(Text)
+    word_count = Column(Integer)
+    fluency_score = Column(Float)
+    fluency_issues = Column(JSON, default=list)
+    iteration_count = Column(Integer, default=1)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<GeneratedChapter {self.story_ir_id}:{self.chapter_num}>"
+
+
+class Database:
+    """SQLite 数据库管理器"""
+
+    _instance: Optional["Database"] = None
+
+    def __new__(cls, db_path: str = "data/writer.db"):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self, db_path: str = "data/writer.db"):
+        if self._initialized:
+            return
+        
+        if not os.path.isabs(db_path):
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            db_path = os.path.join(project_root, db_path)
+        
+        os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
+        self.db_path = db_path
+        self.engine = create_engine(f"sqlite:///{db_path}", echo=False)
+        Base.metadata.create_all(self.engine)
+        self.SessionLocal = sessionmaker(bind=self.engine)
+        self._initialized = True
+
+    def get_session(self) -> Session:
+        return self.SessionLocal()
+
+    def close(self):
+        if hasattr(self, "engine"):
+            self.engine.dispose()
+
+
+def get_database(db_path: str = "data/writer.db") -> Database:
+    return Database(db_path)
+
+
+def save_move_codebook(
+    session: Session,
+    novel_title: str,
+    novel_author: str,
+    codebook: dict,
+) -> str:
+    """保存 Move Codebook"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        codebook_id = str(uuid.uuid4())
+        moves = codebook.get("moves", [])
+        logger.info(f"开始保存 Move Codebook: {novel_title}, 共 {len(moves)} 个 Move")
+
+        existing = session.query(MoveCodebookDB).filter(
+            MoveCodebookDB.source_novel == novel_title
+        ).all()
+        if existing:
+            existing_ids = set(r.id for r in existing)
+            for eid in existing_ids:
+                session.query(MoveCodebookDB).filter(MoveCodebookDB.id == eid).delete()
+            logger.info(f"已清理之前的 {len(existing_ids)} 条记录")
+
+        for move in moves:
+            record = MoveCodebookDB(
+                id=codebook_id,
+                source_novel=novel_title,
+                source_author=novel_author,
+                move_id=move.get("move_id"),
+                name=move.get("name"),
+                name_cn=move.get("name_cn"),
+                description=move.get("description"),
+                description_cn=move.get("description_cn"),
+                emotional_beats=move.get("emotional_beats", []),
+                core_idea=move.get("core_idea"),
+                chapters=move.get("chapters", []),
+                estimated_words=move.get("estimated_words"),
+                source_excerpts=move.get("source_excerpts", []),
+                story_framework=codebook.get("story_framework"),
+                pacing=codebook.get("pacing"),
+                raw_codebook=codebook,
+            )
+            session.add(record)
+
+        session.commit()
+        logger.info(f"Move Codebook 保存成功: {codebook_id}")
+        return codebook_id
+    except Exception as e:
+        session.rollback()
+        logger.error(f"保存 Move Codebook 失败: {e}")
+        raise
+
+
+def save_story_ir(
+    session: Session,
+    title: str,
+    concept: str,
+    chapters: list,
+    reference_novel: str,
+    reference_codebook_id: str,
+    thread_id: str,
+) -> str:
+    """保存 Story IR"""
+    record = StoryIRDB(
+        title=title,
+        concept=concept,
+        chapters=chapters,
+        reference_novel=reference_novel,
+        reference_codebook_id=reference_codebook_id,
+        total_chapters=len(chapters),
+        thread_id=thread_id,
+    )
+    session.add(record)
+    session.commit()
+    return record.id
+
+
+def update_story_ir_status(
+    session: Session,
+    story_ir_id: str,
+    status: str,
+    total_words: int = None,
+):
+    """更新 Story IR 状态"""
+    story = session.get(StoryIRDB, story_ir_id)
+    if story:
+        story.status = status
+        if total_words is not None:
+            story.total_words = total_words
+        session.commit()
+
+
+def save_generated_chapter(
+    session: Session,
+    story_ir_id: str,
+    chapter_num: int,
+    title: str,
+    content: str,
+    fluency_score: float,
+    fluency_issues: list,
+    iteration_count: int,
+) -> str:
+    """保存生成的章节"""
+    record = GeneratedChapterDB(
+        story_ir_id=story_ir_id,
+        chapter_num=chapter_num,
+        title=title,
+        content=content,
+        word_count=len(content),
+        fluency_score=fluency_score,
+        fluency_issues=fluency_issues,
+        iteration_count=iteration_count,
+    )
+    session.add(record)
+    session.commit()
+    return record.id
+
+
+def get_move_codebooks_by_novel(session: Session, novel_title: str) -> list:
+    """获取某小说的 Move Codebook"""
+    return session.query(MoveCodebookDB).filter(
+        MoveCodebookDB.source_novel == novel_title
+    ).all()
+
+
+def get_story_by_thread(session: Session, thread_id: str) -> Optional[StoryIRDB]:
+    """根据 thread_id 获取故事"""
+    return session.query(StoryIRDB).filter(
+        StoryIRDB.thread_id == thread_id
+    ).order_by(StoryIRDB.created_at.desc()).first()

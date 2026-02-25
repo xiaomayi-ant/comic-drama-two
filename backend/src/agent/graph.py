@@ -263,6 +263,7 @@ def run_agent(
         "iteration_count": 0,
         "messages": [],
         "error": None,
+        "script_config": None,
     }
     
     # 配置
@@ -320,6 +321,7 @@ async def run_agent_stream(
     pipeline_version: str | None = None,
     new_product_specs: dict | None = None,
     clean_room: bool | None = None,
+    script_config: dict | None = None,
 ) -> AsyncGenerator[dict, None]:
     """
     异步流式运行 Agent 工作流
@@ -370,6 +372,7 @@ async def run_agent_stream(
         "iteration_count": 0,
         "messages": [],
         "error": None,
+        "script_config": script_config,
     }
     
     # 配置
@@ -380,10 +383,14 @@ async def run_agent_stream(
     }
     
     try:
+        # 跟踪最终产出（astream_events 不会写回 initial_state）
+        final_copy = None
+        draft_copy = None
+
         # 使用 astream_events 获取流式事件
         async for event in graph.astream_events(initial_state, config, version="v2"):
             event_kind = event.get("event")
-            
+
             # 节点开始
             if event_kind == "on_chain_start":
                 node_name = event.get("name", "")
@@ -407,7 +414,7 @@ async def run_agent_stream(
                         "type": "node_start",
                         "node": node_name,
                     }
-            
+
             # 节点结束
             elif event_kind == "on_chain_end":
                 node_name = event.get("name", "")
@@ -428,12 +435,18 @@ async def run_agent_stream(
                     "simple_chat",
                 ]:
                     output = event.get("data", {}).get("output", {})
+                    # 从节点输出中捕获最终文案
+                    if isinstance(output, dict):
+                        if output.get("final_copy"):
+                            final_copy = output["final_copy"]
+                        if output.get("draft_copy"):
+                            draft_copy = output["draft_copy"]
                     yield {
                         "type": "node_end",
                         "node": node_name,
                         "output": output,
                     }
-            
+
             # LLM 流式输出
             elif event_kind == "on_chat_model_stream":
                 chunk = event.get("data", {}).get("chunk")
@@ -442,9 +455,11 @@ async def run_agent_stream(
                         "type": "token",
                         "content": chunk.content,
                     }
-        
-        # 完成
-        yield {"type": "done"}
+
+        # 完成，发送最终结果
+        done_content = final_copy or draft_copy
+        logger.info("流式完成, final_copy=%s, draft_copy=%s", bool(final_copy), bool(draft_copy))
+        yield {"type": "done", "content": done_content}
         
     except Exception as e:
         logger.exception(f"流式执行失败: {e}")
