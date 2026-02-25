@@ -6,6 +6,9 @@ WORKDIR /app
 # 先复制依赖清单，利用 layer cache
 COPY package.json package-lock.json ./
 
+# 安装 Python 和构建工具（用于 better-sqlite3 编译）
+RUN apk add --no-cache python3 make g++
+
 RUN npm ci
 
 # 复制源码并构建
