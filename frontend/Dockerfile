@@ -7,7 +7,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # 安装 Python 和构建工具（用于 better-sqlite3 编译）
-RUN apk add --no-cache python3 make g++
+# 使用阿里云镜像源加速
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
+    apk add --no-cache python3 make g++
 
 RUN npm ci
 
