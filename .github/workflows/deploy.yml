@@ -21,30 +21,29 @@ jobs:
           script: |
             set -e
 
-            # 安装 Docker（首次部署时自动安装，已有则跳过）
-            if ! command -v docker &> /dev/null; then
-              curl -fsSL https://get.docker.com | sh
-              systemctl enable --now docker
-            fi
 
-            # 安装 docker compose plugin（如未安装）
-            if ! docker compose version &> /dev/null; then
-              apt-get update && apt-get install -y docker-compose-plugin
-            fi
-
-            # 拉取最新代码
-            if [ ! -d "${{ env.DEPLOY_DIR }}" ]; then
-              git clone ${{ secrets.REPO_URL }} ${{ env.DEPLOY_DIR }}
-            fi
+            # 1. 进入并确保部署目录存在
+            mkdir -p ${{ env.DEPLOY_DIR }}
             cd ${{ env.DEPLOY_DIR }}
-            git pull origin main
 
-            # 写入后端环境变量
+
+            # 2. 这里的逻辑是：如果没代码就 clone，有代码就 reset 更新
+            if [ ! -d ".git" ]; then
+              git clone ${{ secrets.REPO_URL }} .
+            else
+              git fetch --all
+              git reset --hard origin/main
+            fi
+
+
+            # 3. 写入你之前在 Secrets 填好的环境变量
             echo '${{ secrets.BACKEND_ENV }}' > backend/.env
 
-            # 构建并重启服务
+
+            # 4. 启动容器（--build 会确保你新提交的代码被编译进去）
             docker compose down
             docker compose up --build -d
 
-            # 清理悬空镜像
+
+            # 5. 清理过期的镜像，节省磁盘空间
             docker image prune -f
