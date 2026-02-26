@@ -10,6 +10,7 @@
 @layer base {
   body {
     @apply font-sans antialiased;
+    -webkit-overflow-scrolling: touch;
   }
 
   html {
@@ -17,6 +18,12 @@
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+    overscroll-behavior: none;
+  }
+
+  /* iOS Safari 底部安全区域 */
+  #root {
+    min-height: -webkit-fill-available;
   }
 }
 
@@ -32,8 +39,19 @@
   }
 
   /* iOS 触摸优化 */
-  button, a, textarea {
+  button, a, textarea, input, select {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+  }
+
+  /* 防止 iOS 输入框放大 */
+  input, textarea, select {
+    font-size: 16px;
+  }
+
+  /* iOS 弹性滚动 */
+  .ios-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 }

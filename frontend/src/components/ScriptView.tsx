@@ -245,7 +245,7 @@ export default function ScriptView({ isOpen, onClose, scriptData }: ScriptViewPr
             {/* Main scrollable content */}
             <main
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto p-6 scroll-smooth"
+              className="flex-1 overflow-y-auto p-6 scroll-smooth ios-scroll"
             >
               <div className="max-w-3xl space-y-10 pb-24">
                 {/* Summary Card */}

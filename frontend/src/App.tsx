@@ -550,9 +550,9 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 overflow-hidden font-sans">
+    <div className="flex h-[100dvh] bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 overflow-hidden font-sans">
       {/* Sidebar */}
-      <aside className={`w-[280px] flex-shrink-0 border-r border-gray-100 dark:border-gray-900 bg-gray-50/50 dark:bg-gray-900/50 flex flex-col h-full transition-all duration-300 ${isScriptOpen ? 'hidden' : ''}`}>
+      <aside className={`w-[280px] flex-shrink-0 border-r border-gray-100 dark:border-gray-900 bg-gray-50/50 dark:bg-gray-900/50 flex flex-col h-full transition-all duration-300 ${isScriptOpen ? 'hidden lg:flex' : 'flex'}`}>
         <div className="h-16 flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center text-white dark:text-black">
@@ -583,7 +583,7 @@ export default function App() {
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">历史记录</span>
             <button className="text-xs text-gray-400 hover:text-primary transition-colors">全部</button>
           </div>
-          <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-4 space-y-1">
+          <div className="flex-1 overflow-y-auto custom-scrollbar ios-scroll px-4 pb-4 space-y-1">
           </div>
         </div>
 
@@ -601,7 +601,7 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main className={`flex-1 flex flex-col relative overflow-hidden bg-white dark:bg-gray-950 ${isScriptOpen ? 'min-w-[360px]' : ''}`}>
+      <main className={`flex-1 flex flex-col relative overflow-hidden bg-white dark:bg-gray-950 ios-scroll ${isScriptOpen ? 'min-w-[360px]' : ''}`}>
         {/* Top Bar */}
         <div className="h-16 flex items-center justify-end px-6 gap-4 z-10 border-b border-gray-50 dark:border-gray-900">
           <div className="flex items-center bg-purple-50 dark:bg-purple-900/20 px-3 py-1.5 rounded-full border border-purple-100 dark:border-purple-800">
@@ -616,7 +616,7 @@ export default function App() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 overflow-y-auto custom-scrollbar ios-scroll">
           <AnimatePresence mode="wait">
             {!isChatMode ? (
               <motion.div
