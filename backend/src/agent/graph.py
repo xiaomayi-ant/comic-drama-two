@@ -28,6 +28,7 @@ from src.agent.nodes_v2 import (
     qc_v2_node,
     should_proceed_after_qc,
 )
+from src.agent.script_data import build_script_data
 from src.agent.state import AgentState, IntentType
 from src.core.config import settings
 from src.core.logger import get_logger
@@ -386,6 +387,7 @@ async def run_agent_stream(
         # 跟踪最终产出（astream_events 不会写回 initial_state）
         final_copy = None
         draft_copy = None
+        extracted_title = None
 
         # 使用 astream_events 获取流式事件
         async for event in graph.astream_events(initial_state, config, version="v2"):
@@ -437,6 +439,10 @@ async def run_agent_stream(
                     output = event.get("data", {}).get("output", {})
                     # 从节点输出中捕获最终文案
                     if isinstance(output, dict):
+                        if node_name == "intent_analysis":
+                            intent_result = output.get("intent_result")
+                            if isinstance(intent_result, dict) and intent_result.get("extracted_topic"):
+                                extracted_title = str(intent_result.get("extracted_topic")).strip() or None
                         if output.get("final_copy"):
                             final_copy = output["final_copy"]
                         if output.get("draft_copy"):
@@ -458,8 +464,22 @@ async def run_agent_stream(
 
         # 完成，发送最终结果
         done_content = final_copy or draft_copy
+        script_data = None
+        if isinstance(done_content, str) and done_content.strip():
+            style_name = None
+            if isinstance(script_config, dict):
+                style_raw = script_config.get("style")
+                if isinstance(style_raw, str):
+                    style_name = style_raw
+            script_data = build_script_data(
+                final_copy=done_content,
+                user_input=user_input,
+                title=extracted_title,
+                duration_sec=target_duration_sec,
+                style_name=style_name,
+            )
         logger.info("流式完成, final_copy=%s, draft_copy=%s", bool(final_copy), bool(draft_copy))
-        yield {"type": "done", "content": done_content}
+        yield {"type": "done", "content": done_content, "script_data": script_data}
         
     except Exception as e:
         logger.exception(f"流式执行失败: {e}")

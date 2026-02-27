@@ -119,6 +119,9 @@ class StreamEvent(BaseModel):
     node: Optional[str] = Field(default=None, description="节点名称")
     content: Optional[str] = Field(default=None, description="token 内容")
     output: Optional[dict[str, Any]] = Field(default=None, description="节点输出")
+    script_data: Optional[dict[str, Any]] = Field(
+        default=None, description="结构化剧本详情（done 事件可选）"
+    )
     error: Optional[str] = Field(default=None, description="错误信息")
 
 

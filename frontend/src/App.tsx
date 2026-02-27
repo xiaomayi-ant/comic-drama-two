@@ -11,15 +11,14 @@ import {
   Image as ImageIcon,
   FileText,
   PanelLeftClose,
+  PanelLeftOpen,
   HelpCircle,
   Sparkles,
   Crown,
   Smartphone,
   ChevronDown,
   LayoutGrid,
-  Keyboard,
   ArrowRight,
-  ExternalLink,
   CheckCircle2,
   Clock,
   Palette,
@@ -39,7 +38,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { sendChat, submitConfig, streamSSE, type ChatResponse, type SSEEvent } from './services/api';
 import ScriptView from './components/ScriptView';
 import type { ScriptData } from './components/ScriptView';
-import { parseScriptMarkdown } from './utils/parseScript';
 
 type MessageType = 'text' | 'tool-call' | 'action-card' | 'config-form' | 'user' | 'storyboard-card' | 'script-card';
 
@@ -110,8 +108,51 @@ interface Message {
   };
 }
 
+const IMAGE_UPLOAD_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+]);
+
+const DOC_UPLOAD_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+  'text/markdown',
+]);
+
+const IMAGE_UPLOAD_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.gif'];
+const DOC_UPLOAD_EXTENSIONS = ['.pdf', '.doc', '.docx', '.txt', '.md'];
+
+const FILE_INPUT_ACCEPT = [
+  ...IMAGE_UPLOAD_EXTENSIONS,
+  ...DOC_UPLOAD_EXTENSIONS,
+].join(',');
+
 function nowTimestamp(): string {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function getFileKey(file: File): string {
+  return `${file.name}_${file.size}_${file.lastModified}`;
+}
+
+function isSupportedUploadFile(file: File): boolean {
+  const mime = (file.type || '').toLowerCase();
+  if (IMAGE_UPLOAD_TYPES.has(mime) || DOC_UPLOAD_TYPES.has(mime)) {
+    return true;
+  }
+  const lowerName = file.name.toLowerCase();
+  return [...IMAGE_UPLOAD_EXTENSIONS, ...DOC_UPLOAD_EXTENSIONS].some(ext => lowerName.endsWith(ext));
+}
+
+function isImageFile(file: File): boolean {
+  const mime = (file.type || '').toLowerCase();
+  if (mime.startsWith('image/')) return true;
+  const lowerName = file.name.toLowerCase();
+  return IMAGE_UPLOAD_EXTENSIONS.some(ext => lowerName.endsWith(ext));
 }
 
 function renderScriptContent(content: string) {
@@ -173,10 +214,13 @@ export default function App() {
   const [collapsedForms, setCollapsedForms] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [currentUserInput, setCurrentUserInput] = useState('');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [fileError, setFileError] = useState('');
   const [isScriptOpen, setIsScriptOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [scriptData, setScriptData] = useState<ScriptData | undefined>(undefined);
-  const [extractedTitle, setExtractedTitle] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -187,6 +231,12 @@ export default function App() {
       scrollToBottom();
     }
   }, [messages, isChatMode]);
+
+  useEffect(() => {
+    if (isScriptOpen && !isSidebarCollapsed) {
+      setIsSidebarCollapsed(true);
+    }
+  }, [isScriptOpen, isSidebarCollapsed]);
 
   const handleOptionSelect = (msgId: string, sectionId: string, value: string) => {
     setFormSelections(prev => ({
@@ -251,7 +301,6 @@ export default function App() {
       const response = await submitConfig(configData.threadId, currentUserInput, selections);
 
       const steps: ToolStep[] = [];
-      let capturedTitle = '';
       let finalContent = '';
 
       const updateToolSteps = () => {
@@ -282,15 +331,6 @@ export default function App() {
           } else if (event.type === 'node_end') {
             const nodeName = event.node || '';
             const displayLabel = NODE_DISPLAY_MAP[nodeName];
-
-            // Capture extracted_topic from intent_result（保留原有逻辑）
-            if (nodeName === 'intent_analysis' && event.output) {
-              const intentResult = (event.output as Record<string, unknown>).intent_result as Record<string, unknown> | undefined;
-              if (intentResult?.extracted_topic) {
-                capturedTitle = String(intentResult.extracted_topic);
-                setExtractedTitle(capturedTitle);
-              }
-            }
 
             if (!displayLabel) return;
 
@@ -325,17 +365,20 @@ export default function App() {
                 },
               ];
             });
-          } else if (event.type === 'done' && event.content) {
+          } else if (event.type === 'done') {
+            if (event.script_data) {
+              setScriptData(event.script_data);
+            }
             // done 事件包含最终内容（可能是全量或增量）
             // 如果之前已有 token 流式内容，done 的 content 就是全量，不要重复追加
-            if (!finalContent) {
+            if (event.content && !finalContent) {
               finalContent = event.content;
               setMessages(prev => {
                 const lastMsg = prev[prev.length - 1];
                 if (lastMsg && lastMsg.type === 'text' && lastMsg.id.startsWith('stream-')) {
                   return prev.map(m =>
                     m.id === lastMsg.id
-                      ? { ...m, content: event.content }
+                      ? { ...m, content: event.content || '' }
                       : m
                   );
                 }
@@ -350,7 +393,7 @@ export default function App() {
                   },
                 ];
               });
-            } else {
+            } else if (event.content) {
               // Already have token content, use done content as final version
               finalContent = event.content;
             }
@@ -359,21 +402,6 @@ export default function App() {
         () => {
           for (const step of steps) {
             if (step.status === 'loading') step.status = 'completed';
-          }
-
-          // Parse final_copy into structured ScriptData
-          if (finalContent) {
-            const parsed = parseScriptMarkdown(finalContent, {
-              userInput: currentUserInput,
-              title: capturedTitle || undefined,
-              durationSec: selections.target_duration,
-              styleName: selections.style === 'anime' ? '日漫 电影质感'
-                : selections.style === 'realistic' ? '写实 电影质感'
-                : selections.style === '3d' ? '3D动画 电影质感'
-                : selections.style === 'pixel' ? '像素 复古质感'
-                : undefined,
-            });
-            setScriptData(parsed);
           }
 
           setMessages(prev => {
@@ -440,6 +468,8 @@ export default function App() {
 
     setMessages([userMsg]);
     setInputText('');
+    setSelectedFiles([]);
+    setFileError('');
 
     try {
       const chatResponse: ChatResponse = await sendChat(userInput);
@@ -503,6 +533,8 @@ export default function App() {
     };
     setMessages(prev => [...prev, userMsg]);
     setInputText('');
+    setSelectedFiles([]);
+    setFileError('');
 
     try {
       const chatResponse: ChatResponse = await sendChat(userInput);
@@ -549,36 +581,86 @@ export default function App() {
     }
   };
 
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const removeSelectedFile = (fileToRemove: File) => {
+    const keyToRemove = getFileKey(fileToRemove);
+    setSelectedFiles(prev => prev.filter(file => getFileKey(file) !== keyToRemove));
+  };
+
+  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const incoming: File[] = event.target.files ? Array.from(event.target.files) : [];
+    if (!incoming.length) return;
+
+    const supported = incoming.filter(isSupportedUploadFile);
+    const rejectedCount = incoming.length - supported.length;
+
+    setSelectedFiles(prev => {
+      const existing = new Set(prev.map(getFileKey));
+      const appended = supported.filter(file => !existing.has(getFileKey(file)));
+      return [...prev, ...appended];
+    });
+
+    if (rejectedCount > 0) {
+      setFileError(`已忽略 ${rejectedCount} 个不支持的文件，仅支持图片和文档。`);
+    } else {
+      setFileError('');
+    }
+
+    // Reset input so the same file can be selected again.
+    event.target.value = '';
+  };
+
   return (
     <div className="flex h-[100dvh] bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 overflow-hidden font-sans">
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept={FILE_INPUT_ACCEPT}
+        className="hidden"
+        onChange={handleFileInputChange}
+      />
       {/* Sidebar */}
-      <aside className={`w-[280px] flex-shrink-0 border-r border-gray-100 dark:border-gray-900 bg-gray-50/50 dark:bg-gray-900/50 flex flex-col h-full transition-all duration-300 ${isScriptOpen ? 'hidden lg:flex' : 'flex'}`}>
+      <aside
+        className={`${isSidebarCollapsed ? 'w-[88px]' : 'w-[280px]'} flex-shrink-0 border-r border-gray-100 dark:border-gray-900 bg-gray-50/50 dark:bg-gray-900/50 flex flex-col h-full transition-all duration-300 ${isScriptOpen ? 'hidden lg:flex' : 'flex'}`}
+      >
         <div className="h-16 flex items-center justify-between px-4">
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${isSidebarCollapsed ? 'hidden' : ''}`}>
             <div className="w-8 h-8 bg-black dark:bg-white rounded-lg flex items-center justify-center text-white dark:text-black">
               <Sparkles size={20} />
             </div>
           </div>
-          <button className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 transition-colors">
-            <PanelLeftClose size={20} />
+          <button
+            onClick={() => setIsSidebarCollapsed(prev => !prev)}
+            className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+            title={isSidebarCollapsed ? '展开侧栏' : '折叠侧栏'}
+          >
+            {isSidebarCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
           </button>
         </div>
 
         <div className="px-4 py-2 space-y-2">
           <button
             onClick={() => { setIsChatMode(false); setMessages([]); setFormSelections({}); setSubmittedForms(new Set()); }}
-            className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium py-3 px-4 rounded-xl transition-all shadow-sm border border-gray-200 dark:border-gray-700"
+            className={`w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium py-3 px-4 rounded-xl transition-all shadow-sm border border-gray-200 dark:border-gray-700 ${isSidebarCollapsed ? 'px-2' : ''}`}
+            title="新建"
           >
             <Plus size={20} />
-            新建
+            {!isSidebarCollapsed && '新建'}
           </button>
-          <button className="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium py-3 px-4 rounded-xl transition-all">
+          <button
+            className={`w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium py-3 px-4 rounded-xl transition-all ${isSidebarCollapsed ? 'px-2' : ''}`}
+            title="资产库"
+          >
             <Library size={20} />
-            资产库
+            {!isSidebarCollapsed && '资产库'}
           </button>
         </div>
 
-        <div className="mt-6 flex-1 flex flex-col min-h-0">
+        <div className={`mt-6 flex-1 flex flex-col min-h-0 ${isSidebarCollapsed ? 'hidden' : ''}`}>
           <div className="px-6 flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">历史记录</span>
             <button className="text-xs text-gray-400 hover:text-primary transition-colors">全部</button>
@@ -587,7 +669,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="p-4 border-t border-gray-100 dark:border-gray-900">
+        <div className={`p-4 border-t border-gray-100 dark:border-gray-900 ${isSidebarCollapsed ? 'hidden' : ''}`}>
           <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition-colors">
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
               U
@@ -654,19 +736,12 @@ export default function App() {
                     />
                     <div className="px-6 pb-6 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <button className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 transition-colors" title="Upload file">
+                        <button
+                          onClick={openFilePicker}
+                          className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 transition-colors"
+                          title="上传图片或文档"
+                        >
                           <Plus size={20} />
-                        </button>
-                        <button className="h-10 px-4 rounded-full bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-700 dark:text-gray-300 transition-colors text-sm font-medium">
-                          <LayoutGrid size={18} />
-                          模式
-                          <ChevronDown size={16} />
-                        </button>
-                        <button className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 transition-colors" title="Templates">
-                          <LayoutGrid size={20} />
-                        </button>
-                        <button className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 transition-colors" title="Settings">
-                          <Keyboard size={20} />
                         </button>
                       </div>
                       <button
@@ -683,35 +758,37 @@ export default function App() {
                         <ArrowRight size={18} />
                       </button>
                     </div>
+                    {(selectedFiles.length > 0 || fileError) && (
+                      <div className="px-6 pb-5">
+                        {selectedFiles.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {selectedFiles.map((file) => (
+                              <div
+                                key={getFileKey(file)}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-800 text-xs text-gray-700 dark:text-gray-200"
+                              >
+                                {isImageFile(file) ? <ImageIcon size={12} /> : <FileText size={12} />}
+                                <span className="max-w-[180px] truncate">{file.name}</span>
+                                <button
+                                  onClick={() => removeSelectedFile(file)}
+                                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                  aria-label={`移除文件 ${file.name}`}
+                                  title="移除"
+                                >
+                                  <X size={12} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {fileError && (
+                          <p className="text-xs text-orange-500">{fileError}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Suggested Prompts */}
-                <div className="mt-10 w-full max-w-4xl flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm text-gray-500">
-                  {[
-                    { text: '参考爆款视频', icon: 'tiktok' },
-                    { text: '漫剧：超绝人物特写', img: 'https://picsum.photos/seed/comic/32/20' },
-                    { text: '猫狗偷玩手机一秒装睡' },
-                    { text: '香港电影 · 996' },
-                    { text: '咖啡产品宣传图' },
-                    { text: '《知否知否》MV制作' },
-                  ].map((prompt, i) => (
-                    <a key={i} href="#" className="flex items-center gap-2 hover:text-primary transition-colors group">
-                      {prompt.icon === 'tiktok' && (
-                        <span className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center group-hover:bg-primary/10">
-                          <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"></path></svg>
-                        </span>
-                      )}
-                      {prompt.img && (
-                        <div className="w-8 h-5 rounded overflow-hidden relative">
-                          <img src={prompt.img} alt="" className="object-cover w-full h-full opacity-80 group-hover:opacity-100" referrerPolicy="no-referrer" />
-                        </div>
-                      )}
-                      <span>{prompt.text}</span>
-                      <ExternalLink size={12} className="opacity-50" />
-                    </a>
-                  ))}
-                </div>
               </motion.div>
             ) : (
               <motion.div
@@ -997,9 +1074,34 @@ export default function App() {
                     className="w-full bg-transparent border-0 rounded-2xl p-4 pr-20 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 focus:ring-0 resize-none outline-none min-h-[60px]"
                     placeholder="与综合助手对话，支持多种能力..."
                   />
+                  {selectedFiles.length > 0 && (
+                    <div className="px-4 pt-2 flex flex-wrap gap-2">
+                      {selectedFiles.map((file) => (
+                        <div
+                          key={getFileKey(file)}
+                          className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-[11px] text-gray-700 dark:text-gray-200"
+                        >
+                          {isImageFile(file) ? <ImageIcon size={11} /> : <FileText size={11} />}
+                          <span className="max-w-[150px] truncate">{file.name}</span>
+                          <button
+                            onClick={() => removeSelectedFile(file)}
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                            aria-label={`移除文件 ${file.name}`}
+                            title="移除"
+                          >
+                            <X size={11} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="px-4 pb-3 flex items-center justify-between">
                     <div className={`flex items-center gap-2 ${isScriptOpen ? 'hidden' : ''}`}>
-                      <button className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 transition-colors">
+                      <button
+                        onClick={openFilePicker}
+                        className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+                        title="上传图片或文档"
+                      >
                         <Plus size={18} />
                       </button>
                       <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-medium transition-colors">

@@ -1,3 +1,5 @@
+import type { ScriptData } from '../components/ScriptView';
+
 const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
 
 export interface ChatResponse {
@@ -19,6 +21,7 @@ export interface SSEEvent {
   node?: string;
   content?: string;
   output?: Record<string, unknown>;
+  script_data?: ScriptData;
   error?: string;
 }
 
