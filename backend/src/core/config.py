@@ -80,6 +80,12 @@ class Settings(BaseSettings):
         description="是否打印 LLM 输入/输出原文（开发用，生产建议关闭）",
     )
 
+    # ScriptView 结构化抽取（script_data）
+    script_data_llm_enabled: bool = Field(
+        default=True,
+        description="是否启用 LLM 进行 ScriptView 信息抽取（角色/场景/道具/分镜），失败时自动回退规则抽取",
+    )
+
     def ensure_api_keys_env(self) -> None:
         """确保 API Key 在环境变量中（LangChain 自动读取）"""
         # DashScope

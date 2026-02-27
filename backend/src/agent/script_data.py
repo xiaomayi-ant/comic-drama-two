@@ -2,8 +2,17 @@
 
 from __future__ import annotations
 
+import json
 import re
 from typing import Any
+
+from langchain_core.messages import SystemMessage
+
+from src.agent.nodes import _extract_json, _to_text, get_llm
+from src.core.config import settings
+from src.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def _clean_markdown(text: str) -> str:
@@ -154,6 +163,241 @@ def _parse_shots(shots_text: str, synopsis: str) -> list[dict[str, Any]]:
     return shots
 
 
+def _merge_named_items(
+    base_items: list[dict[str, str]],
+    llm_items: list[dict[str, str]],
+    *,
+    include_keys: tuple[str, ...],
+) -> list[dict[str, str]]:
+    merged: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for item in [*base_items, *llm_items]:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name") or "").strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        row: dict[str, str] = {"id": str(len(merged) + 1), "name": name}
+        for key in include_keys:
+            row[key] = str(item.get(key) or "").strip()
+        merged.append(row)
+    return merged
+
+
+def _opening_narration(synopsis: str) -> str:
+    sentences = [s.strip() for s in re.split(r"[。！？]", synopsis) if s.strip()]
+    if not sentences:
+        return ""
+    return "，".join(sentences[:2]).rstrip("，") + "！"
+
+
+def _normalize_llm_shots(shots: Any, synopsis: str) -> list[dict[str, Any]]:
+    if not isinstance(shots, list):
+        return []
+
+    normalized: list[dict[str, Any]] = []
+    opening = _opening_narration(synopsis)
+    for idx, item in enumerate(shots, start=1):
+        if not isinstance(item, dict):
+            continue
+        shot_name = str(item.get("shotName") or item.get("name") or "").strip()
+        visual_desc = str(item.get("visualDesc") or item.get("description") or "").strip()
+        summary = str(item.get("summary") or "").strip()
+        if not summary:
+            first_sentence = re.split(r"[。；\n]", visual_desc)[0].strip() if visual_desc else ""
+            summary = first_sentence[:80] if first_sentence else visual_desc[:80]
+        if not shot_name and not visual_desc:
+            continue
+        narration = str(item.get("narration") or "").strip()
+        has_narration = bool(item.get("hasNarration"))
+        if idx == 1 and not narration and opening:
+            narration = opening
+            has_narration = True
+        normalized.append(
+            {
+                "id": idx,
+                "duration": str(item.get("duration") or "3.0s").strip() or "3.0s",
+                "summary": summary,
+                "narration": narration,
+                "hasNarration": has_narration,
+                "visualDesc": visual_desc,
+                "shotName": shot_name or f"镜头{idx}",
+            }
+        )
+    return normalized
+
+
+def _decode_json_value(text: str) -> Any:
+    raw = text.strip()
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+
+    fenced_blocks = re.findall(r"```(?:json)?\s*([\s\S]*?)```", raw)
+    for block in fenced_blocks:
+        candidate = block.strip()
+        if not candidate:
+            continue
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+
+    decoder = json.JSONDecoder()
+    starts = [i for i in (raw.find("{"), raw.find("[")) if i >= 0]
+    if not starts:
+        return None
+    start = min(starts)
+    try:
+        value, _ = decoder.raw_decode(raw[start:])
+        return value
+    except Exception:
+        return None
+
+
+def _normalize_aigc_spec(value: Any) -> dict[str, Any] | None:
+    if value is None:
+        return None
+
+    if isinstance(value, list):
+        value = {"shots": value}
+    if not isinstance(value, dict):
+        return None
+
+    shots_raw = value.get("shots")
+    if not isinstance(shots_raw, list):
+        shots_raw = []
+
+    shots: list[dict[str, Any]] = []
+    for idx, shot in enumerate(shots_raw, start=1):
+        if not isinstance(shot, dict):
+            continue
+        render_spec = shot.get("render_spec")
+        if not isinstance(render_spec, dict):
+            render_spec = {}
+        sid = shot.get("id")
+        try:
+            shot_id = int(sid)
+        except Exception:
+            shot_id = idx
+        shots.append(
+            {
+                "id": shot_id,
+                "name": str(shot.get("name") or "").strip() or f"镜头{idx}",
+                "director_brief": str(shot.get("director_brief") or "").strip(),
+                "render_spec": render_spec,
+            }
+        )
+
+    global_negative = value.get("global_negative")
+    if not isinstance(global_negative, list):
+        global_negative = []
+
+    normalized = {
+        "density": str(value.get("density") or "balanced").strip() or "balanced",
+        "global_negative": [str(x).strip() for x in global_negative if str(x).strip()],
+        "shots": shots,
+    }
+    return normalized
+
+
+def _extract_aigc_spec_from_markdown(final_copy: str) -> dict[str, Any] | None:
+    normalized = _clean_markdown(final_copy)
+    section = re.search(
+        r"(?:^|\n)\s*(?:#{1,3}\s*)?AIGC执行规格(?:\s*\(JSON\)|\s*（JSON）)?\s*\n([\s\S]*?)(?=\n\s*#{1,3}\s+\S|\Z)",
+        normalized,
+    )
+    if not section:
+        return None
+    value = _decode_json_value(section.group(1))
+    return _normalize_aigc_spec(value)
+
+
+def _extract_script_data_with_llm(
+    *,
+    final_copy: str,
+    synopsis: str,
+    shots_text: str,
+    style_text: str,
+) -> dict[str, Any]:
+    if not settings.script_data_llm_enabled or not final_copy.strip():
+        return {}
+
+    prompt = f"""你是“剧本结构化信息抽取器”。
+你需要从给定剧本文本中抽取前端 ScriptView 所需字段，并严格输出一个 JSON 对象，不要输出任何解释或 markdown。
+
+抽取要求：
+1) characters/scenes/props/shots 都是数组，不确定时返回空数组。
+2) 角色、场景、道具名称要去重，避免把镜头词（特写/远景/全景等）当成角色。
+3) shots 按叙事顺序输出，每个元素包含：
+   - shotName: 镜头名称（如“开场远景”“主角特写”）
+   - visualDesc: 画面描述
+   - summary: 该镜头一句话摘要（<=80字）
+   - narration: 旁白（没有就空字符串）
+   - hasNarration: 布尔值
+   - duration: 形如 "3.0s"
+4) props 每项包含 name 和 type（关键道具/普通道具）。
+5) style_text 若为空可返回空字符串。
+
+输出 JSON 结构：
+{{
+  "synopsis": "故事梗概",
+  "packagingStyle": "视觉包装风格",
+  "characters": [{{"name": "xx", "description": "xx"}}],
+  "scenes": [{{"name": "xx", "description": "xx"}}],
+  "props": [{{"name": "xx", "type": "关键道具"}}],
+  "shots": [
+    {{
+      "shotName": "xx",
+      "visualDesc": "xx",
+      "summary": "xx",
+      "narration": "",
+      "hasNarration": false,
+      "duration": "3.0s"
+    }}
+  ],
+  "aigcSpec": {{
+    "density": "cinematic|balanced|strict",
+    "global_negative": ["全局负向约束"],
+    "shots": [
+      {{
+        "id": 1,
+        "name": "镜头名称",
+        "director_brief": "创意层一句话",
+        "render_spec": {{}}
+      }}
+    ]
+  }}
+}}
+
+输入信息：
+synopsis（规则切分结果）:
+{synopsis}
+
+shots_text（规则切分结果）:
+{shots_text}
+
+style_text（规则切分结果）:
+{style_text}
+
+完整原文：
+{final_copy}
+"""
+    try:
+        llm = get_llm(temperature=0.0)
+        response = llm.invoke([SystemMessage(content=prompt)])
+        raw_text = _to_text(getattr(response, "content", response))
+        parsed = _extract_json(raw_text) or {}
+        return parsed if isinstance(parsed, dict) else {}
+    except Exception as exc:
+        logger.warning("script_data LLM extraction failed, fallback to regex only: %s", exc)
+        return {}
+
+
 def build_script_data(
     *,
     final_copy: str,
@@ -164,13 +408,66 @@ def build_script_data(
 ) -> dict[str, Any]:
     """Convert script markdown text to UI-friendly structured data."""
     synopsis, shots_text, style_text = _split_sections(final_copy)
-    shot_list = _parse_shots(shots_text, synopsis)
+    regex_shots = _parse_shots(shots_text, synopsis)
+    regex_characters = _extract_characters(synopsis, shots_text)
+    regex_scenes = _extract_scenes(synopsis, shots_text)
+    regex_props = _extract_props(f"{synopsis}\n{shots_text}")
+
+    llm_data = _extract_script_data_with_llm(
+        final_copy=final_copy,
+        synopsis=synopsis,
+        shots_text=shots_text,
+        style_text=style_text,
+    )
+    llm_synopsis = str(llm_data.get("synopsis") or "").strip() if isinstance(llm_data, dict) else ""
+    llm_style = str(llm_data.get("packagingStyle") or "").strip() if isinstance(llm_data, dict) else ""
+    llm_characters_raw = llm_data.get("characters") if isinstance(llm_data, dict) else None
+    llm_scenes_raw = llm_data.get("scenes") if isinstance(llm_data, dict) else None
+    llm_props_raw = llm_data.get("props") if isinstance(llm_data, dict) else None
+    llm_shots_raw = llm_data.get("shots") if isinstance(llm_data, dict) else None
+    llm_aigc_spec_raw = llm_data.get("aigcSpec") if isinstance(llm_data, dict) else None
+
+    llm_characters = _merge_named_items(
+        [],
+        llm_characters_raw if isinstance(llm_characters_raw, list) else [],
+        include_keys=("description",),
+    )
+    llm_scenes = _merge_named_items(
+        [],
+        llm_scenes_raw if isinstance(llm_scenes_raw, list) else [],
+        include_keys=("description",),
+    )
+    llm_props = _merge_named_items(
+        [],
+        llm_props_raw if isinstance(llm_props_raw, list) else [],
+        include_keys=("type",),
+    )
+    llm_shots = _normalize_llm_shots(llm_shots_raw, synopsis)
+    llm_aigc_spec = _normalize_aigc_spec(llm_aigc_spec_raw)
+
+    characters = _merge_named_items(
+        regex_characters,
+        llm_characters,
+        include_keys=("description",),
+    )
+    scenes = _merge_named_items(
+        regex_scenes,
+        llm_scenes,
+        include_keys=("description",),
+    )
+    props = _merge_named_items(
+        regex_props,
+        llm_props,
+        include_keys=("type",),
+    )
+    shot_list = llm_shots if llm_shots else regex_shots
     shot_count = len(shot_list)
 
     duration_label = f"{duration_sec} 秒" if duration_sec else (f"{shot_count * 3} 秒" if shot_count else "24 秒")
-    characters = _extract_characters(synopsis, shots_text)
-    scenes = _extract_scenes(synopsis, shots_text)
-    props = _extract_props(f"{synopsis}\n{shots_text}")
+    final_synopsis = llm_synopsis or synopsis
+    final_style_text = llm_style or style_text
+    markdown_aigc_spec = _extract_aigc_spec_from_markdown(final_copy)
+    final_aigc_spec = llm_aigc_spec or markdown_aigc_spec
 
     return {
         "title": title or user_input[:20] or "剧本创作",
@@ -178,11 +475,12 @@ def build_script_data(
         "totalDuration": duration_label,
         "style": style_name or "日漫 电影质感",
         "requirements": user_input,
-        "synopsis": synopsis or "暂无故事梗概",
-        "packagingStyle": style_text or "暂无包装风格描述",
+        "synopsis": final_synopsis or "暂无故事梗概",
+        "packagingStyle": final_style_text or "暂无包装风格描述",
         "characters": characters,
         "scenes": scenes,
         "props": props,
         "shots": shot_list,
+        "aigcSpec": final_aigc_spec,
     }
 

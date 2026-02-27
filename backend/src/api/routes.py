@@ -240,6 +240,12 @@ STYLE_LABELS = {
     "pixel": "像素风",
 }
 
+DENSITY_LABELS = {
+    "cinematic": "cinematic",
+    "balanced": "balanced",
+    "strict": "strict",
+}
+
 RATIO_LABELS = {
     "16:9": "16:9横屏",
     "9:16": "9:16竖屏",
@@ -323,6 +329,16 @@ async def chat(request: ChatRequest):
                     ],
                     "default": "heartwarming",
                 },
+                {
+                    "id": "density",
+                    "label": "6. AIGC指令密度",
+                    "options": [
+                        {"label": "电影化（意境优先）", "value": "cinematic"},
+                        {"label": "均衡（推荐）", "value": "balanced"},
+                        {"label": "严格工程化（执行优先）", "value": "strict"},
+                    ],
+                    "default": "balanced",
+                },
             ],
         },
     }
@@ -359,9 +375,11 @@ async def chat_submit(request: ConfigSubmitRequest):
     style = request.selections.get("style", "anime")
     narrator = request.selections.get("narrator", "yes")
     mood = request.selections.get("mood", "heartwarming")
+    density = request.selections.get("density", "balanced")
     
     ratio_label = RATIO_LABELS.get(ratio, ratio)
     style_label = STYLE_LABELS.get(style, style)
+    density_label = DENSITY_LABELS.get(density, "balanced")
     
     # 构建剧本配置
     script_config = {
@@ -370,6 +388,7 @@ async def chat_submit(request: ConfigSubmitRequest):
         "narrator": "需要旁白" if narrator == "yes" else "不需要旁白",
         "mood": mood,
         "duration": f"{target_duration_sec}秒" if target_duration_sec else "系统推荐",
+        "density": density_label,
     }
     
     user_instructions = f"视频比例：{ratio_label}，视频风格：{style_label}"

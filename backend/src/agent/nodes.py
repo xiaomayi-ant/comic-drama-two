@@ -749,6 +749,7 @@ def writing_node(state: AgentState, config: RunnableConfig) -> dict[str, Any]:
                 DURATION=script_config.get("duration", "系统推荐"),
                 NARRATOR=script_config.get("narrator", "需要旁白"),
                 MOOD=script_config.get("mood", "温馨感人"),
+                DENSITY=script_config.get("density", "balanced"),
                 USER_INPUT=user_input,
             )
             response = llm.invoke(
