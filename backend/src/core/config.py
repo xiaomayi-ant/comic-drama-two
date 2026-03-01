@@ -86,6 +86,57 @@ class Settings(BaseSettings):
         description="是否启用 LLM 进行 ScriptView 信息抽取（角色/场景/道具/分镜），失败时自动回退规则抽取",
     )
 
+    # 检索配置
+    enable_retrieval: bool = Field(
+        default=True, description="是否启用 hybrid-search 语义检索"
+    )
+    qdrant_host: str = Field(default="localhost", description="Qdrant 主机")
+    qdrant_port: int = Field(default=6333, description="Qdrant 端口")
+    qdrant_collection: str = Field(
+        default="novel_nodes_hybrid", description="Qdrant 集合名称"
+    )
+    mongodb_uri: str = Field(
+        default="mongodb://admin:susie2026@localhost:27017",
+        description="MongoDB 连接 URI",
+    )
+    mongodb_database: str = Field(
+        default="novels", description="MongoDB 数据库名称"
+    )
+    retrieval_top_k: int = Field(
+        default=3, description="检索返回结果数量"
+    )
+    retrieval_use_rerank: bool = Field(
+        default=False, description="是否使用 Rerank 重排序（需要下载 BAAI/bge-reranker-base 模型）"
+    )
+    retrieval_rerank_gap: float = Field(
+        default=5.0, description="Rerank 分数差距阈值：与最佳结果差距超过此值的结果被裁掉"
+    )
+
+    # AIGC 模型（通义万相）
+    aigc_image_model: str = Field(
+        default="wanx2.1-t2i-turbo", description="文生图模型 ID"
+    )
+    aigc_image_size: str = Field(
+        default="1280*720", description="文生图输出尺寸"
+    )
+    aigc_video_model: str = Field(
+        default="wan2.5-t2v-preview", description="文生视频模型 ID（wan2.5-t2v-preview 支持有声视频）"
+    )
+    aigc_video_poll_interval: int = Field(
+        default=15, description="图生视频轮询间隔（秒）"
+    )
+    aigc_video_max_wait: int = Field(
+        default=600, description="图生视频最大等待时间（秒）"
+    )
+
+    # Redis / Celery
+    redis_url: str = Field(
+        default="redis://localhost:6379/0", description="Redis URL（Celery broker/backend）"
+    )
+    celery_task_always_eager: bool = Field(
+        default=False, description="Celery 同步模式（测试用）"
+    )
+
     def ensure_api_keys_env(self) -> None:
         """确保 API Key 在环境变量中（LangChain 自动读取）"""
         # DashScope

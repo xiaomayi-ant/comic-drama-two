@@ -15,6 +15,13 @@ import { motion, AnimatePresence } from 'motion/react';
 export interface Character {
   id: string;
   name: string;
+  role: '主角' | '配角' | '功能性角色';
+  appearance: {
+    age: string;
+    identity: string;
+    features: string;
+  };
+  voice: string;
   description: string;
 }
 
@@ -69,8 +76,9 @@ const MOCK_SCRIPT: ScriptData = {
   synopsis: "张三丰与张无忌因门派理念冲突在武当山巅对峙...",
   packagingStyle: "日漫电影质感，色彩浓郁且对比鲜明...",
   characters: [
-    { id: "1", name: "张三丰", description: "仙风道骨，白发白须，眼神深邃平和。" },
-    { id: "2", name: "张无忌", description: "英俊青年，眉宇间透着正气与坚毅。" }
+    { id: "1", name: "张三丰", role: "主角", appearance: { age: "八十余岁", identity: "武当派祖师", features: "白发白须，仙风道骨，身着灰色道袍" }, voice: "沉稳低沉，带有洞察世事的从容", description: "武当派创始人，太极拳法宗师" },
+    { id: "2", name: "张无忌", role: "主角", appearance: { age: "二十出头", identity: "明教教主", features: "英俊青年，眉宇间透着正气与坚毅，身着黑色劲装" }, voice: "年轻有力，语气坚定中带有敬意", description: "明教教主，身兼九阳神功与乾坤大挪移" },
+    { id: "3", name: "旁白", role: "功能性角色", appearance: { age: "", identity: "画外音叙述者", features: "" }, voice: "浑厚磁性的男声，低沉而富有故事感", description: "负责串联剧情、交代背景的画外音" }
   ],
   scenes: [
     { id: "1", name: "武当山金殿", description: "云雾缭绕的高山之巅，金殿巍峨耸立。" }
@@ -297,27 +305,60 @@ export default function ScriptView({ isOpen, onClose, scriptData }: ScriptViewPr
                 <section id="sv-characters" className="space-y-4">
                   <h3 className="text-base font-bold">角色设定 ({script.characters.length})</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {script.characters.map((char, idx) => (
-                      <div
-                        key={char.id}
-                        className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex gap-3 items-start"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 shrink-0 flex items-center justify-center">
-                          <User size={18} className="text-blue-500" />
-                        </div>
-                        <div className="space-y-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                              R{idx + 1}
-                            </span>
-                            <h4 className="font-bold text-sm">{char.name}</h4>
+                    {script.characters.map((char, idx) => {
+                      const roleColor = char.role === '主角'
+                        ? 'bg-blue-500'
+                        : char.role === '配角'
+                          ? 'bg-indigo-400'
+                          : 'bg-gray-400';
+                      const hasAppearance = char.appearance && (char.appearance.age || char.appearance.identity || char.appearance.features);
+                      return (
+                        <div
+                          key={char.id}
+                          className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex gap-3 items-start"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 shrink-0 flex items-center justify-center">
+                            <User size={18} className="text-blue-500" />
                           </div>
-                          <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
-                            {char.description}
-                          </p>
+                          <div className="space-y-2 min-w-0 flex-1">
+                            {/* Name + Role */}
+                            <div className="flex items-center gap-2">
+                              <span className={`${roleColor} text-white text-[10px] font-bold px-1.5 py-0.5 rounded`}>
+                                R{idx + 1}
+                              </span>
+                              <h4 className="font-bold text-sm">{char.name}</h4>
+                              <span className="text-[10px] text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
+                                {char.role || '角色'}
+                              </span>
+                            </div>
+                            {/* Description */}
+                            <p className="text-xs text-gray-500 leading-relaxed">
+                              {char.description}
+                            </p>
+                            {/* Appearance */}
+                            {hasAppearance && (
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-bold text-purple-500">形象</span>
+                                <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500">
+                                  {char.appearance.age && <span>年龄: {char.appearance.age}</span>}
+                                  {char.appearance.identity && <span>身份: {char.appearance.identity}</span>}
+                                </div>
+                                {char.appearance.features && (
+                                  <p className="text-xs text-gray-500 leading-relaxed">{char.appearance.features}</p>
+                                )}
+                              </div>
+                            )}
+                            {/* Voice */}
+                            {char.voice && (
+                              <div className="space-y-0.5">
+                                <span className="text-[10px] font-bold text-orange-500">声音</span>
+                                <p className="text-xs text-gray-500 leading-relaxed">{char.voice}</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </section>
 

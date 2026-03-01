@@ -1,4 +1,9 @@
-from src.agent.graph import create_agent_graph, run_agent, run_agent_stream
-from src.agent.state import AgentState, IntentType
+"""Agent 模块（已废弃）
 
-__all__ = ["create_agent_graph", "run_agent", "run_agent_stream", "AgentState", "IntentType"]
+剧本生成功能已移至 src.script 模块。
+此模块保留仅用于向后兼容。
+"""
+
+from src.agent.script_data import build_script_data
+
+__all__ = ["build_script_data"]

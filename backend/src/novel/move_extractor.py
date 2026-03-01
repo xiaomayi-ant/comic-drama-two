@@ -37,7 +37,7 @@ async def extract_moves_from_novel(novel_data: Dict) -> Optional[Tuple[Dict, uui
     prompt = MOVE_EXTRACTION_PROMPT.format(novel_content=novel_content)
 
     try:
-        from src.agent.nodes import get_llm
+        from src.script.nodes import get_llm
 
         llm = get_llm()
 

@@ -1,0 +1,73 @@
+{
+  "user_input": "张三封和张卫健在洛阳应天门大战",
+  "user_instructions": "视频比例：16:9横屏，视频风格：动漫风，目标时长约30秒",
+  "breakdown_result": null,
+  "analysis_report": null,
+  "reverse_config": null,
+  "schema_ir": null,
+  "verification_result": {
+    "is_passed": false,
+    "issues": [
+      "p0-hard 信息点遗漏（must_cover_points）: ['2']"
+    ],
+    "failed_move_ids": [
+      4
+    ],
+    "feedback": "请只重写 failed_move_ids 对应的 move，并修复以下问题：\n- p0-hard 信息点遗漏（must_cover_points）: ['2']",
+    "coverage": {
+      "p0_total": 2,
+      "p0_covered": 1,
+      "missing_p0_point_ids": [
+        "2"
+      ],
+      "covered_p0_point_ids": [
+        "1"
+      ],
+      "p0_hard_total": 2,
+      "p0_hard_covered": 1,
+      "missing_p0_hard_point_ids": [
+        "2"
+      ],
+      "covered_p0_hard_point_ids": [
+        "1"
+      ],
+      "p0_soft_total": 0,
+      "p0_soft_covered": 0,
+      "missing_p0_soft_point_ids": [],
+      "covered_p0_soft_point_ids": []
+    }
+  },
+  "writing_meta": {
+    "rendered_by_move": {
+      "1": "等等——就在刚才，那一记凌厉出手……",
+      "4": "张三封和张卫健，就站在洛阳应天门！盛唐宫城正门之上，双雄对峙，大战一触即发！",
+      "9": "现在就去见证这场盛唐气韵对决——它不在片场，在历史正门的光影里真实发生！"
+    },
+    "coverage_map": {
+      "1": {
+        "covered": true,
+        "move_id": 4,
+        "phrase": "洛阳应天门"
+      },
+      "2": {
+        "covered": true,
+        "move_id": 4,
+        "phrase": "张三封和张卫健"
+      },
+      "3": {
+        "covered": true,
+        "move_id": 4,
+        "phrase": "大战"
+      }
+    },
+    "draft_len": 92,
+    "mode": "v2"
+  },
+  "proofread_result": {
+    "is_passed": true,
+    "feedback": "文案整体感染力强，富有画面感与历史张力，节奏紧凑，悬念设置得当。微调建议：1）'张三封'疑似笔误（应为'张三丰'？但张三丰非盛唐人物，亦非张卫健常演角色；若为虚构/戏仿角色，需明确设定以避免历史混淆）；2）'就站在洛阳应天门'主谓略显突兀，优化为'赫然立于洛阳应天门之上'更显庄重气韵；3）末句'它不在片场……真实发生'逻辑稍有矛盾（历史正门无法'真实发生'现代对决），调整为'它不在银幕幻境，在千年应天门的砖石光影间——铿然上演！'，兼顾诗意、史实感与传播力。已按此润色，保留原有热血基调与盛唐语境。",
+    "refined_copy": "等等——就在刚才，那一记凌厉出手……\n\n张三丰与张卫健，赫然立于洛阳应天门之上！\n盛唐宫城正门巍然矗立，双雄对峙，大战一触即发！\n\n现在就去见证这场盛唐气韵对决——\n它不在银幕幻境，\n在千年应天门的砖石光影间——铿然上演！",
+    "quality_score": 9.0
+  },
+  "final_copy": "等等——就在刚才，那一记凌厉出手……\n\n张三丰与张卫健，赫然立于洛阳应天门之上！\n盛唐宫城正门巍然矗立，双雄对峙，大战一触即发！\n\n现在就去见证这场盛唐气韵对决——\n它不在银幕幻境，\n在千年应天门的砖石光影间——铿然上演！"
+}

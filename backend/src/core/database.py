@@ -1,13 +1,14 @@
 """数据库模型 - SQLite 存储"""
 
 import json
+import logging
 import os
 import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Column, String, Text, Integer, Float, JSON, DateTime, create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from sqlalchemy import Column, String, Text, Integer, Float, JSON, DateTime, ForeignKey, create_engine, text
+from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 
 Base = declarative_base()
 
@@ -77,6 +78,90 @@ class GeneratedChapterDB(Base):
         return f"<GeneratedChapter {self.story_ir_id}:{self.chapter_num}>"
 
 
+class EpisodeDB(Base):
+    """剧集模型"""
+    __tablename__ = "episodes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(String(200), nullable=False)
+    script_content = Column(Text, default="", nullable=False)
+    thread_id = Column(String(100), index=True)
+    duration = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    storyboards = relationship("StoryboardDB", back_populates="episode", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<Episode {self.id}:{self.title}>"
+
+
+class StoryboardDB(Base):
+    """分镜模型"""
+    __tablename__ = "storyboards"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    episode_id = Column(Integer, ForeignKey("episodes.id"), index=True, nullable=False)
+    storyboard_number = Column(Integer, nullable=False)
+    title = Column(String(255), default="", nullable=False)
+    location = Column(String(255), default="", nullable=False)
+    shot_type = Column(String(100), default="", nullable=False)
+    angle = Column(String(100), default="", nullable=False)
+    movement = Column(String(100), default="", nullable=False)
+    action = Column(Text, default="", nullable=False)
+    dialogue = Column(Text, default="", nullable=False)
+    duration = Column(Integer, default=5, nullable=False)
+    image_prompt = Column(Text, default="", nullable=False)
+    video_prompt = Column(Text, default="", nullable=False)
+    render_spec = Column(JSON, default=dict)
+    image_url = Column(String(500), default="", nullable=False)
+    video_url = Column(String(500), default="", nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    episode = relationship("EpisodeDB", back_populates="storyboards")
+
+    def __repr__(self):
+        return f"<Storyboard {self.episode_id}:{self.storyboard_number}>"
+
+
+class AsyncTaskDB(Base):
+    """异步任务状态模型"""
+    __tablename__ = "async_tasks"
+
+    id = Column(String(64), primary_key=True)
+    type = Column(String(64), nullable=False)
+    status = Column(String(32), default="pending", nullable=False)
+    progress = Column(Integer, default=0, nullable=False)
+    resource_id = Column(String(64), nullable=False)
+    message = Column(String(255), default="", nullable=False)
+    result = Column(Text, default="", nullable=False)
+    error = Column(Text, default="", nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<AsyncTask {self.id}:{self.type}:{self.status}>"
+
+
+_db_logger = logging.getLogger(__name__)
+
+
+def _ensure_aigc_columns(engine) -> None:
+    """为 storyboards 表补充 image_url / video_url 列（SQLite 迁移）。"""
+    with engine.connect() as conn:
+        rows = conn.execute(text("PRAGMA table_info(storyboards)")).fetchall()
+        existing = {row[1] for row in rows}
+
+        for col_name in ("image_url", "video_url"):
+            if col_name not in existing:
+                conn.execute(text(
+                    f"ALTER TABLE storyboards ADD COLUMN {col_name} VARCHAR(500) NOT NULL DEFAULT ''"
+                ))
+                _db_logger.info("已添加 storyboards.%s 列", col_name)
+        conn.commit()
+
+
 class Database:
     """SQLite 数据库管理器"""
 
@@ -100,6 +185,7 @@ class Database:
         self.db_path = db_path
         self.engine = create_engine(f"sqlite:///{db_path}", echo=False)
         Base.metadata.create_all(self.engine)
+        _ensure_aigc_columns(self.engine)
         self.SessionLocal = sessionmaker(bind=self.engine)
         self._initialized = True
 
@@ -141,7 +227,7 @@ def save_move_codebook(
 
         for move in moves:
             record = MoveCodebookDB(
-                id=codebook_id,
+                id=str(uuid.uuid4()),
                 source_novel=novel_title,
                 source_author=novel_author,
                 move_id=move.get("move_id"),

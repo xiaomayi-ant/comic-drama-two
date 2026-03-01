@@ -1,13 +1,14 @@
 """API 路由定义"""
 
 import json
+import os
 import uuid
 from typing import AsyncGenerator
 
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 
-from src.agent.graph import run_agent, run_agent_stream
+from src.script.graph import run_script_agent_stream
 from src.api.schemas import (
     ChatRequest,
     ConfigSubmitRequest,
@@ -21,6 +22,7 @@ from src.api.schemas import (
 from src.novel.graph import run_novel_agent, run_novel_agent_stream
 from src.core.logger import get_logger
 from src.core.config import settings
+from src.core.artifacts import persist_run_artifacts
 
 logger = get_logger(__name__)
 
@@ -42,62 +44,14 @@ async def health_check():
 )
 async def generate_copywriting(request: CopywritingRequest):
     """
-    生成口播文案（同步接口）
+    生成口播文案（已废弃）
     
-    工作流程（仿写优先版本）：
-    1. 意图分析节点：判断用户意图（仿写/分析/聊天）
-    2. 逆向工程节点：从参考口播中提取“可复用先验配置”（结构/风格/策略）
-    3. 规划节点：在先验上做约束投影（时长/素材缺失/合规），产出 move_plan
-    4. 写作节点：按 Ten-move schema 填充并渲染
-    5. 规则验收节点：确定性检查（must_include/must_avoid/必选 moves 等），失败则回写作迭代
-    6. 评测节点：LLM 评测与润色，通过或达到上限则输出
+    此接口已废弃，请使用 /api/v1/chat/submit 接口进行剧本生成
     """
-    logger.info(f"收到文案生成请求, input_length={len(request.user_input)}")
-    
-    # 生成线程 ID
-    thread_id = request.thread_id or str(uuid.uuid4())
-
-    # v2 dual-mode:
-    # - if new_product_specs is provided: transfer mode (cross-category / new product grounding)
-    # - if not provided: imitate mode (same-product imitation; backend will best-effort auto-extract grounding)
-
-    # 目标时长：如果用户没写入指令，则补一条轻量提示，便于下游节点解析
-    user_instructions = request.user_instructions
-    if request.target_duration_sec and (not user_instructions or "秒" not in user_instructions):
-        suffix = f"目标时长约{request.target_duration_sec}秒"
-        user_instructions = (user_instructions + "\n" + suffix) if user_instructions else suffix
-    
-    try:
-        # per-request debug override
-        if request.debug_node_io is not None:
-            settings.debug_node_io = request.debug_node_io
-        if request.debug_llm_io is not None:
-            settings.debug_llm_io = request.debug_llm_io
-
-        result = run_agent(
-            user_input=request.user_input,
-            user_instructions=user_instructions,
-            thread_id=thread_id,
-            target_duration_sec=request.target_duration_sec,
-            schema_json=request.schema_json,
-            pipeline_version=request.pipeline_version,
-            new_product_specs=request.new_product_specs,
-            clean_room=request.clean_room,
-        )
-        
-        if result["success"]:
-            logger.info(f"文案生成成功, thread_id={thread_id}")
-        else:
-            logger.warning(f"文案生成失败: {result.get('error')}")
-        
-        return CopywritingResponse(**result)
-        
-    except Exception as e:
-        logger.exception(f"API 处理异常: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
-        )
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="此接口已废弃，请使用 /api/v1/chat/submit 接口进行剧本生成"
+    )
 
 
 @router.post(
@@ -108,62 +62,13 @@ async def generate_copywriting(request: CopywritingRequest):
 )
 async def generate_copywriting_stream(request: CopywritingRequest):
     """
-    流式生成口播文案
+    流式生成口播文案（已废弃）
     
-    返回 Server-Sent Events (SSE) 格式的流式响应：
-    - type: node_start - 节点开始执行
-    - type: node_end - 节点执行完成
-    - type: token - LLM 输出的 token
-    - type: done - 生成完成
-    - type: error - 发生错误
+    此接口已废弃，请使用 /api/v1/chat/submit 接口进行剧本生成
     """
-    logger.info(f"收到流式文案生成请求, input_length={len(request.user_input)}")
-    
-    # 生成线程 ID
-    thread_id = request.thread_id or str(uuid.uuid4())
-
-    # v2 dual-mode: allow missing new_product_specs (imitate mode)
-
-    user_instructions = request.user_instructions
-    if request.target_duration_sec and (not user_instructions or "秒" not in user_instructions):
-        suffix = f"目标时长约{request.target_duration_sec}秒"
-        user_instructions = (user_instructions + "\n" + suffix) if user_instructions else suffix
-    
-    async def event_generator() -> AsyncGenerator[str, None]:
-        """生成 SSE 事件流"""
-        try:
-            if request.debug_node_io is not None:
-                settings.debug_node_io = request.debug_node_io
-            if request.debug_llm_io is not None:
-                settings.debug_llm_io = request.debug_llm_io
-
-            async for event in run_agent_stream(
-                user_input=request.user_input,
-                user_instructions=user_instructions,
-                thread_id=thread_id,
-                target_duration_sec=request.target_duration_sec,
-                schema_json=request.schema_json,
-                pipeline_version=request.pipeline_version,
-                new_product_specs=request.new_product_specs,
-                clean_room=request.clean_room,
-            ):
-                # 格式化为 SSE
-                event_data = json.dumps(event, ensure_ascii=False)
-                yield f"data: {event_data}\n\n"
-                
-        except Exception as e:
-            logger.exception(f"流式生成异常: {e}")
-            error_event = json.dumps({"type": "error", "error": str(e)}, ensure_ascii=False)
-            yield f"data: {error_event}\n\n"
-    
-    return StreamingResponse(
-        event_generator(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",  # 禁用 nginx 缓冲
-        },
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="此接口已废弃，请使用 /api/v1/chat/submit 接口进行剧本生成"
     )
 
 
@@ -176,56 +81,14 @@ async def generate_copywriting_stream(request: CopywritingRequest):
 )
 async def analyze_copywriting(request: CopywritingRequest):
     """
-    分析文案结构
+    分析文案结构（已废弃）
     
-    强制使用文案分析流程，返回结构化的分析结果
+    此接口已废弃
     """
-    from src.agent.nodes import breakdown_node, intent_analysis_node
-    from src.agent.state import AgentState, IntentType
-    
-    logger.info(f"收到文案分析请求, input_length={len(request.user_input)}")
-    
-    try:
-        # 构建初始状态
-        state: AgentState = {
-            "user_input": request.user_input,
-            "user_instructions": "请分析这段文案的结构",
-            "intent_result": {
-                "intent": IntentType.COPY_ANALYSIS.value,
-                "confidence": 1.0,
-                "reasoning": "用户请求分析",
-            },
-            "breakdown_result": None,
-            "schema_ir": None,
-            "analysis_report": None,
-            "reverse_config": None,
-            "move_plan": None,
-            "verification_result": None,
-            "draft_copy": None,
-            "writing_meta": None,
-            "proofread_result": None,
-            "final_copy": None,
-            "artifact_paths": None,
-            "iteration_count": 0,
-            "messages": [],
-            "error": None,
-        }
-        
-        # 仅执行解析节点
-        result = breakdown_node(state)
-        
-        return CopywritingResponse(
-            success=True,
-            breakdown_result=result.get("breakdown_result"),
-            error=result.get("error"),
-        )
-        
-    except Exception as e:
-        logger.exception(f"分析接口处理异常: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
-        )
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="此接口已废弃"
+    )
 
 
 # ============================================================================
@@ -398,16 +261,146 @@ async def chat_submit(request: ConfigSubmitRequest):
 
     async def event_generator() -> AsyncGenerator[str, None]:
         """生成 SSE 事件流"""
+        artifact_payload: dict[str, object] = {
+            "thread_id": request.thread_id,
+            "user_input": request.user_input,
+            "selections": request.selections,
+            "script_config": script_config,
+            "target_duration_sec": target_duration_sec,
+            "retrieval_references": [],
+            "move_codebook": None,
+            "move_guidance_ir": None,
+            "llm_prompt_used": None,
+            "final_result": None,
+        }
         try:
-            async for event in run_agent_stream(
+            async for event in run_script_agent_stream(
                 user_input=request.user_input,
                 user_instructions=user_instructions,
                 thread_id=request.thread_id,
                 target_duration_sec=target_duration_sec,
+                target_chapters=request.target_chapters,
                 script_config=script_config,
+                reference_novel_title=request.reference_novel_title,
             ):
+                # 记录检索与 move 提取结果，便于复盘“给 LLM 的参考内容”
+                if event.get("type") == "node_end" and event.get("node") == "load_reference":
+                    output = event.get("output")
+                    if isinstance(output, dict):
+                        results = output.get("retrieval_results")
+                        if isinstance(results, list):
+                            refs: list[dict[str, object]] = []
+                            for i, r in enumerate(results, start=1):
+                                if not isinstance(r, dict):
+                                    continue
+                                tree_node = r.get("tree_node")
+                                if not isinstance(tree_node, dict):
+                                    tree_node = {}
+                                full_text = str(r.get("content") or "")
+                                refs.append(
+                                    {
+                                        "rank": i,
+                                        "novel_name": r.get("novel_name"),
+                                        "novel_id": r.get("novel_id"),
+                                        "node_id": r.get("node_id"),
+                                        "score": r.get("score"),
+                                        "rerank_score": r.get("rerank_score"),
+                                        "chapter_title": tree_node.get("title"),
+                                        "chapter_summary": tree_node.get("summary"),
+                                        # 传给写作 LLM 的是 content[:800]
+                                        "llm_reference_excerpt": full_text[:800],
+                                        # 原始章节文本（用于人工评估检索有效性）
+                                        "chapter_content": full_text,
+                                    }
+                                )
+                            artifact_payload["retrieval_references"] = refs
+
+                        move_codebook = output.get("move_codebook")
+                        if isinstance(move_codebook, dict):
+                            artifact_payload["move_codebook"] = {
+                                "story_framework": move_codebook.get("story_framework"),
+                                "pacing": move_codebook.get("pacing"),
+                                "moves": move_codebook.get("moves"),
+                            }
+
+                if event.get("type") == "node_end" and event.get("node") == "write_scenes":
+                    output = event.get("output")
+                    if isinstance(output, dict):
+                        if isinstance(output.get("prompt_used"), str):
+                            artifact_payload["llm_prompt_used"] = output.get("prompt_used")
+                        if isinstance(output.get("move_guidance_ir"), dict):
+                            artifact_payload["move_guidance_ir"] = output.get("move_guidance_ir")
+                        # 不把完整 prompt/IR 发给前端
+                        event = {
+                            **event,
+                            "output": {
+                                k: v for k, v in output.items()
+                                if k not in {"prompt_used", "move_guidance_ir"}
+                            },
+                        }
+
+                if event.get("type") == "done":
+                    artifact_payload["final_result"] = {
+                        "content": event.get("content"),
+                        "script_data": event.get("script_data"),
+                    }
+                    # 追踪 source_refs 是否真正落到了结构化结果
+                    try:
+                        script_data = event.get("script_data")
+                        retrieval_refs = artifact_payload.get("retrieval_references") or []
+                        retrieval_set = set()
+                        if isinstance(retrieval_refs, list):
+                            for r in retrieval_refs:
+                                if isinstance(r, dict):
+                                    rid = f"{r.get('novel_id', 'unknown')}#{r.get('node_id', 'unknown')}"
+                                    retrieval_set.add(rid)
+
+                        used_refs = set()
+                        if isinstance(script_data, dict):
+                            aigc_spec = script_data.get("aigcSpec")
+                            if isinstance(aigc_spec, dict):
+                                shots = aigc_spec.get("shots")
+                                if isinstance(shots, list):
+                                    for s in shots:
+                                        if not isinstance(s, dict):
+                                            continue
+                                        refs = s.get("source_refs")
+                                        if isinstance(refs, list):
+                                            for ref in refs:
+                                                ref_str = str(ref).strip()
+                                                if ref_str:
+                                                    used_refs.add(ref_str)
+
+                        artifact_payload["source_ref_trace"] = {
+                            "retrieval_ref_count": len(retrieval_set),
+                            "used_ref_count": len(used_refs),
+                            "retrieval_refs": sorted(retrieval_set),
+                            "used_refs": sorted(used_refs),
+                            "unused_refs": sorted(retrieval_set - used_refs),
+                        }
+                        if isinstance(script_data, dict):
+                            aigc_spec = script_data.get("aigcSpec")
+                            if isinstance(aigc_spec, dict):
+                                model_trace = aigc_spec.get("reference_trace")
+                                if isinstance(model_trace, dict):
+                                    artifact_payload["model_reference_trace"] = model_trace
+                    except Exception as trace_err:
+                        logger.warning("source_ref_trace 统计失败: %s", trace_err)
+
                 event_data = json.dumps(event, ensure_ascii=False)
                 yield f"data: {event_data}\n\n"
+
+            # 请求结束后落盘一次产物
+            try:
+                backend_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                paths = persist_run_artifacts(
+                    project_root=backend_root,
+                    thread_id=request.thread_id,
+                    payload=artifact_payload,  # type: ignore[arg-type]
+                )
+                logger.info("已写入运行产物: %s", paths.run_json)
+            except Exception as artifact_err:
+                logger.warning("写入运行产物失败: %s", artifact_err)
         except Exception as e:
             logger.exception("配置提交流式生成异常: %s", e)
             error_event = json.dumps(

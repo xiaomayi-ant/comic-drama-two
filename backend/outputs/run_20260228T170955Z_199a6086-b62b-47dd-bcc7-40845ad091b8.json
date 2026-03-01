@@ -1,0 +1,777 @@
+{
+  "thread_id": "199a6086-b62b-47dd-bcc7-40845ad091b8",
+  "user_input": "铁扇公主和七公主在花果山大战",
+  "selections": {
+    "target_duration": "auto",
+    "ratio": "16:9",
+    "style": "anime",
+    "narrator": "yes",
+    "mood": "heartwarming",
+    "density": "balanced"
+  },
+  "script_config": {
+    "ratio": "16:9横屏",
+    "style": "动漫风",
+    "narrator": "需要旁白",
+    "mood": "heartwarming",
+    "duration": "系统推荐",
+    "density": "balanced"
+  },
+  "target_duration_sec": null,
+  "retrieval_references": [
+    {
+      "rank": 1,
+      "novel_name": "武炼巅峰",
+      "novel_id": "novel_45116227",
+      "node_id": "0093",
+      "score": 0.5,
+      "rerank_score": null,
+      "chapter_title": "第九十四章 封",
+      "chapter_summary": "",
+      "llm_reference_excerpt": "\n　　;\n\n　　---------..\n\n　　随着夏凝裳的动作，整个山谷中的浓郁阴气都有了反应，从上俯瞰，就象是一锅煮滚的开水，阴气仿佛有了生命似的在山谷内不停地翻滚蠕动，场面骇人至极。..(·~)\n\n　　“不好！”文飞尘惊叫，他虽然不知道夏凝裳到底在干什么，但身为真元境五层的高手，眼力多少还是有一些的。\n\n　　这个女此前恐怕是在这山谷中布置下了什么阵法，现在正在催动大阵的运转。\n\n　　若真叫她把这未知的阵法启动起来，只怕这一次的事情会有变故。\n\n　　“加把劲！赶紧给我把这个光幕给破了！”文飞尘怒吼，他要在那个大阵开启之前将夏凝裳擒拿到手，否则万事皆休。\n\n　　“你们也过来，要不然现在就杀了你们！”文飞尘中那些风雨楼的小角色叱喝。\n\n　　怒浪等人哪敢有什么迟疑，本来这样的激战他们是完全派不上用场的，他们也有自知之明，一直就站在旁边看戏，可文飞尘这一声令下，他们就不能不参与其中了。\n\n　　这些人的攻击很弱，可多多少少也能消耗下那光幕的防御。\n\n　　一行十二个人，皆都已经使出了吃奶的力气，不要命地猛攻着半圆型的光幕。\n\n　　光幕上荡起的涟漪一层接着一层，看似摇摇欲坠，可依然坚挺如初。\n\n　　光幕内，杨开心急如焚，他有心帮忙，奈何实力太低，根本插不上手，只能守护在夏凝裳身边，待万一光幕被破，好尽自己的一份绵薄之力。\n\n　　夏凝裳的动作越来越快，两只手已经舞成了残影，山谷内的阴风呼啸越来越猛烈，听着如鬼哭狼嚎，让人心头惊悚。\n\n　　文飞尘面色凝重中带有一丝贪婪，他发现自己还是低估了这个防御秘宝的等级，这至少是一件天级上品的防御秘宝，否则根本不可能支持这么长时间而不破。\n\n　　天级上品啊，足以抵挡住神游境高手的全力一击，有这东西，就等于多了一条命。\n\n　　足足一炷香的时间后，那光幕上突然出现了一道小小的裂缝。\n\n　　伴随着裂缝的出现，夏凝裳的面色也是一白！催动这个防御秘宝，她也耗费了",
+      "chapter_content": "\n　　;\n\n　　---------..\n\n　　随着夏凝裳的动作，整个山谷中的浓郁阴气都有了反应，从上俯瞰，就象是一锅煮滚的开水，阴气仿佛有了生命似的在山谷内不停地翻滚蠕动，场面骇人至极。..(·~)\n\n　　“不好！”文飞尘惊叫，他虽然不知道夏凝裳到底在干什么，但身为真元境五层的高手，眼力多少还是有一些的。\n\n　　这个女此前恐怕是在这山谷中布置下了什么阵法，现在正在催动大阵的运转。\n\n　　若真叫她把这未知的阵法启动起来，只怕这一次的事情会有变故。\n\n　　“加把劲！赶紧给我把这个光幕给破了！”文飞尘怒吼，他要在那个大阵开启之前将夏凝裳擒拿到手，否则万事皆休。\n\n　　“你们也过来，要不然现在就杀了你们！”文飞尘中那些风雨楼的小角色叱喝。\n\n　　怒浪等人哪敢有什么迟疑，本来这样的激战他们是完全派不上用场的，他们也有自知之明，一直就站在旁边看戏，可文飞尘这一声令下，他们就不能不参与其中了。\n\n　　这些人的攻击很弱，可多多少少也能消耗下那光幕的防御。\n\n　　一行十二个人，皆都已经使出了吃奶的力气，不要命地猛攻着半圆型的光幕。\n\n　　光幕上荡起的涟漪一层接着一层，看似摇摇欲坠，可依然坚挺如初。\n\n　　光幕内，杨开心急如焚，他有心帮忙，奈何实力太低，根本插不上手，只能守护在夏凝裳身边，待万一光幕被破，好尽自己的一份绵薄之力。\n\n　　夏凝裳的动作越来越快，两只手已经舞成了残影，山谷内的阴风呼啸越来越猛烈，听着如鬼哭狼嚎，让人心头惊悚。\n\n　　文飞尘面色凝重中带有一丝贪婪，他发现自己还是低估了这个防御秘宝的等级，这至少是一件天级上品的防御秘宝，否则根本不可能支持这么长时间而不破。\n\n　　天级上品啊，足以抵挡住神游境高手的全力一击，有这东西，就等于多了一条命。\n\n　　足足一炷香的时间后，那光幕上突然出现了一道小小的裂缝。\n\n　　伴随着裂缝的出现，夏凝裳的面色也是一白！催动这个防御秘宝，她也耗费了大量的元气，现在更要一心二用开启之前的布置，体内的元气就如泄了闸的洪水一般，凶猛地往外流逝。\n\n　　看到希望，文飞尘一边不停地催促众人攻击，一边自己也使出了大杀招，身上的元气暴动起来，看似平淡而缓慢地往前推出了一掌。\n\n　　一掌打在光幕上，整个光幕都猛地摇晃一下，夏凝裳娇躯一震，脸色更加苍白了。\n\n　　咔嚓嚓……光幕上终于裂出蜘蛛网一般密集的裂纹。\n\n　　“哈哈哈！”文飞尘大笑不已，他有自信，只要全力再轰出一掌，这个光幕就会彻底告破。\n\n　　但还不等他的下一掌打出，山谷内的翻腾的阴气骤然间平息了下来，耳畔边的鬼哭狼嚎也在一瞬间消失无踪。\n\n　　夏凝裳那一双如星辰般清澈的美眸中闪动着，口中娇叱：“封！”\n\n　　这一刻，夏凝裳的准备也终于完成！\n\n　　哗啦啦……天幕之上，突然出现一阵锁链被甩动的声响，宛若勾魂的乐曲。\n\n　　众人震惊之下抬头看去，只见半空中飞荡着好些条长达几丈，又粗又黑的锁链，这些锁链完全是由浓郁的阴气构成，散发着一股股让人心悸的森凉。\n\n　　这些阴气锁链飞绕在血战帮和风雨楼诸人的头顶上，下一刻，突然有了灵性似的，朝下方扑了过来。\n\n　　文飞尘面色大变，知道自己终究还是迟了一步，匆忙中出掌轰向那光幕。\n\n　　同一时间，夏凝裳身躯一晃，再无力气催动自己的天级秘宝。\n\n　　这一道掌风竟就这么直直地，毫无阻碍地冲夏凝裳打了过来。\n\n　　关键时刻，一直在旁边警惕的杨开终于找到了动手的机会，在那掌风击中夏凝裳之前赶紧拽了她一把，可她还是被掌风边缘扫中，娇躯一颤，面色顿时苍白起来，杨开将她拦腰抱起，头也不回地往远处飞奔。\n\n　　敌人的数量太多，实力太强，他还没傻到要跟他们正面冲突的地步。\n\n　　就在杨开带着夏凝裳逃跑的时候，那些阴气锁链终于缠上了血战帮的诸位高手。\n\n　　锁链总共只有八条，文飞尘被夏凝裳重点照顾，一个人就被三条锁链给盯上了，剩下的五条也是奔向血战帮的离合境和气动境高手。\n\n　　被锁链缠绕的众人面色大骇，只以为吾命休矣。哪曾想这些锁链缠绕住他们之后，竟直接隐没进了他们的体内，八条锁链齐齐消失不见。\n\n　　文飞尘蓦然感觉自己一身真元境的实力被一种无形的力量压制了下来，忍不住闷哼一声，张口就是一道血箭喷了出去。\n\n　　那三个离合境高手和其中一个实力稍高的气动境弟也是如此，面色刹那间苍白万分，齐齐呕血不止。\n\n　　还剩下最后一个实力低些的气动境弟，竟然在一瞬间气息全无，倒地毙命！\n\n　　“怎么回事？”龙辉勃然大怒，他刚才眼见局势大好，即将破掉对方的天级秘宝，心里已经在想着要如何凌辱夏凝裳才有快感了，可眨眼的功夫，自己这边竟死了一个，重伤五个，就连文飞尘也是一脸的萎靡不振！\n\n　　龙辉哪能不怒？到嘴的鸭就这么给飞了！\n\n　　“龙少爷息怒。”文飞尘强忍着钻心的疼痛，运转元气驱除寒意，声音虚弱地开口解释道：“那女恐怕之前在此地有所布置，这番借助了阵法的威力来对付我们。我等一时不察，倒让她给得手了。”\n\n　　“废物，都是一群废物！”龙辉暴跳如雷，破口大骂，“这么多人对付人家一个竟然还一败涂地。”\n\n　　文飞尘面上闪过一丝怒气，却强忍了下来，开口道：“我们虽然被算计，但那女现在也绝对不好过，恐怕浑身上下已无半点元气了，若是这个时候能追到他们，他们只是待宰的羔羊！”\n\n　　龙辉迫不及待道：“那还等什么，赶紧追出去啊！”\n\n　　文飞尘将目光扭向风雨楼的一群小角色，阴着脸道：“给你们一个活命的机会，若能将那女擒拿过来的话，我文飞尘负责将你们安全带离此地！”\n\n　　刚才夏凝裳的八道锁链针对的全是血战帮的高手，反倒是风雨楼这群人一个都没伤着。活着进山谷的是五个，现在还是五个，状态比起血战帮倒是好多了。\n\n　　---------\n\n\n<a id=\"chapter-94\"></a>\n"
+    }
+  ],
+  "move_codebook": {
+    "story_framework": "英雄之旅（断裂版）：平凡庇护 → 威胁入侵 → Threshold Struggle（阈限抗争）→ Collapse Imminent（临界崩塌）",
+    "pacing": {
+      "setup": 0.12,
+      "rising_action": 0.48,
+      "climax": 0.3,
+      "resolution": 0.1
+    },
+    "moves": [
+      {
+        "move_id": 1,
+        "name": "atmospheric_setup",
+        "description": "以超自然意象建立压抑、不祥的环境基调，激活读者对阴邪力量的感官警觉",
+        "chapters": [
+          94
+        ],
+        "core_idea": "夏凝裳启动阵法引发山谷阴气暴动，如沸水翻滚，营造出即将失控的灾厄临界感",
+        "estimated_words": {
+          "min": 80,
+          "max": 120
+        },
+        "emotional_beats": [
+          "ominous",
+          "unsettling",
+          "visceral",
+          "claustrophobic"
+        ]
+      },
+      {
+        "move_id": 2,
+        "name": "threat_introduction",
+        "description": "通过高手视角确认危机等级，将模糊危险转化为具象化、高利害的行动指令",
+        "chapters": [
+          94
+        ],
+        "core_idea": "文飞尘识别阵法威胁并下令强攻光幕，将抽象‘变故’具象为‘擒拿失败即万事皆休’的生存倒计时",
+        "estimated_words": {
+          "min": 100,
+          "max": 150
+        },
+        "emotional_beats": [
+          "urgent",
+          "authoritative",
+          "menacing",
+          "escalating"
+        ]
+      },
+      {
+        "move_id": 3,
+        "name": "power_hierarchy_display",
+        "description": "用群体协作与能力落差揭示修真世界的力量秩序和角色功能定位",
+        "chapters": [
+          94
+        ],
+        "core_idea": "风雨楼小角色被迫参战却攻击微弱，杨开守在阵内无力干预，凸显实力断层与结构性无助",
+        "estimated_words": {
+          "min": 90,
+          "max": 130
+        },
+        "emotional_beats": [
+          "helpless",
+          "hierarchical",
+          "frustrated",
+          "resigned"
+        ]
+      },
+      {
+        "move_id": 4,
+        "name": "resource_revelation",
+        "description": "揭露关键道具的稀缺性价值，将防御机制升格为战略级争夺焦点",
+        "chapters": [
+          94
+        ],
+        "core_idea": "文飞尘识破光幕为天级上品秘宝，赋予其‘等同多一条命’的修真经济逻辑，使攻防对抗获得系统性重量",
+        "estimated_words": {
+          "min": 70,
+          "max": 110
+        },
+        "emotional_beats": [
+          "covetous",
+          "awed",
+          "calculating",
+          "heightened_stakes"
+        ]
+      },
+      {
+        "move_id": 5,
+        "name": "dual_expenditure",
+        "description": "同步展现施术者与防御者的双重消耗，以生理代价强化紧张的真实感与悲壮感",
+        "chapters": [
+          94
+        ],
+        "core_idea": "夏凝裳面色惨白、元气溃泄，光幕裂隙初现；杨开心焦守护——防御不是静态屏障，而是生命能量的实时燃烧",
+        "estimated_words": {
+          "min": 80,
+          "max": 120
+        },
+        "emotional_beats": [
+          "exhausted",
+          "desperate",
+          "fragile",
+          "sacrificial"
+        ]
+      },
+      {
+        "move_id": 6,
+        "name": "climax_precipitation",
+        "description": "用标志性动作与声效触发不可逆的结构转折点，制造‘崩解已开始’的确定性临界信号",
+        "chapters": [
+          94
+        ],
+        "core_idea": "文飞尘打出蓄势一掌，光幕剧烈震颤，夏凝裳躯体剧震；随后‘咔嚓嚓’声中蛛网裂纹蔓延——防御体系进入不可逆崩溃进程",
+        "estimated_words": {
+          "min": 90,
+          "max": 130
+        },
+        "emotional_beats": [
+          "shattering",
+          "inevitable",
+          "triumphant",
+          "dreadful"
+        ]
+      }
+    ]
+  },
+  "move_guidance_ir": {
+    "narrative_intent": "铁扇公主和七公主在花果山大战",
+    "move_guidance": [
+      {
+        "move_id": 1,
+        "name": "atmospheric_setup",
+        "description": "以超自然意象建立压抑、不祥的环境基调，激活读者对阴邪力量的感官警觉",
+        "core_idea": "夏凝裳启动阵法引发山谷阴气暴动，如沸水翻滚，营造出即将失控的灾厄临界感",
+        "emotional_beats": [
+          "ominous",
+          "unsettling",
+          "visceral",
+          "claustrophobic"
+        ],
+        "references": [
+          "novel_45116227#0093"
+        ],
+        "priority": "high"
+      },
+      {
+        "move_id": 2,
+        "name": "threat_introduction",
+        "description": "通过高手视角确认危机等级，将模糊危险转化为具象化、高利害的行动指令",
+        "core_idea": "文飞尘识别阵法威胁并下令强攻光幕，将抽象‘变故’具象为‘擒拿失败即万事皆休’的生存倒计时",
+        "emotional_beats": [
+          "urgent",
+          "authoritative",
+          "menacing",
+          "escalating"
+        ],
+        "references": [
+          "novel_45116227#0093"
+        ],
+        "priority": "high"
+      },
+      {
+        "move_id": 3,
+        "name": "power_hierarchy_display",
+        "description": "用群体协作与能力落差揭示修真世界的力量秩序和角色功能定位",
+        "core_idea": "风雨楼小角色被迫参战却攻击微弱，杨开守在阵内无力干预，凸显实力断层与结构性无助",
+        "emotional_beats": [
+          "helpless",
+          "hierarchical",
+          "frustrated",
+          "resigned"
+        ],
+        "references": [
+          "novel_45116227#0093"
+        ],
+        "priority": "high"
+      },
+      {
+        "move_id": 4,
+        "name": "resource_revelation",
+        "description": "揭露关键道具的稀缺性价值，将防御机制升格为战略级争夺焦点",
+        "core_idea": "文飞尘识破光幕为天级上品秘宝，赋予其‘等同多一条命’的修真经济逻辑，使攻防对抗获得系统性重量",
+        "emotional_beats": [
+          "covetous",
+          "awed",
+          "calculating",
+          "heightened_stakes"
+        ],
+        "references": [
+          "novel_45116227#0093"
+        ],
+        "priority": "medium"
+      },
+      {
+        "move_id": 5,
+        "name": "dual_expenditure",
+        "description": "同步展现施术者与防御者的双重消耗，以生理代价强化紧张的真实感与悲壮感",
+        "core_idea": "夏凝裳面色惨白、元气溃泄，光幕裂隙初现；杨开心焦守护——防御不是静态屏障，而是生命能量的实时燃烧",
+        "emotional_beats": [
+          "exhausted",
+          "desperate",
+          "fragile",
+          "sacrificial"
+        ],
+        "references": [
+          "novel_45116227#0093"
+        ],
+        "priority": "medium"
+      },
+      {
+        "move_id": 6,
+        "name": "climax_precipitation",
+        "description": "用标志性动作与声效触发不可逆的结构转折点，制造‘崩解已开始’的确定性临界信号",
+        "core_idea": "文飞尘打出蓄势一掌，光幕剧烈震颤，夏凝裳躯体剧震；随后‘咔嚓嚓’声中蛛网裂纹蔓延——防御体系进入不可逆崩溃进程",
+        "emotional_beats": [
+          "shattering",
+          "inevitable",
+          "triumphant",
+          "dreadful"
+        ],
+        "references": [
+          "novel_45116227#0093"
+        ],
+        "priority": "medium"
+      }
+    ]
+  },
+  "llm_prompt_used": "\n# 角色与任务\n\n你是一位专业的视频剧本创作助手。\n\n你的任务是根据用户提供的创作需求和视频配置，生成一个完整的视频剧本。\n\n---\n\n# 视频配置信息\n\n- 视频比例：16:9横屏\n- 视频风格：动漫风\n- 目标时长：系统推荐\n- 旁白需求：需要旁白\n- 情绪基调：heartwarming\n- AIGC 指令密度：balanced\n\n---\n\n# 用户需求\n\n铁扇公主和七公主在花果山大战\n\n---\n\n# 参考素材（来自检索）\n\n【武炼巅峰 - 第九十四章 封】\nref_id: novel_45116227#0093\n摘要：\n内容片段：\n　　;\n\n　　---------..\n\n　　随着夏凝裳的动作，整个山谷中的浓郁阴气都有了反应，从上俯瞰，就象是一锅煮滚的开水，阴气仿佛有了生命似的在山谷内不停地翻滚蠕动，场面骇人至极。..(·~)\n\n　　“不好！”文飞尘惊叫，他虽然不知道夏凝裳到底在干什么，但身为真元境五层的高手，眼力多少还是有一些的。\n\n　　这个女此前恐怕是在这山谷中布置下了什么阵法，现在正在催动大阵的运转。\n\n　　若真叫她把这未知的阵法启动起来，只怕这一次的事情会有变故。\n\n　　“加把劲！赶紧给我把这个光幕给破了！”文飞尘怒吼，他要在那个大阵开启之前将夏凝裳擒拿到手，否则万事皆休。\n\n　　“你们也过来，要不然现在就杀了你们！”文飞尘中那些风雨楼的小角色叱喝。\n\n　　怒浪等人哪敢有什么迟疑，本来这样的激战他们是完全派不上用场的，他们也有自知之明，一直就站在旁边看戏，可文飞尘这一声令下，他们就不能不参与其中了。\n\n　　这些人的攻击很弱，可多多少少也能消耗下那光幕的防御。\n\n　　一行十二个人，皆都已经使出了吃奶的力气，不要命地猛攻着半圆型的光幕。\n\n　　光幕上荡起的涟漪一层接着一层，看似摇摇欲坠，可依然坚挺如初。\n\n　　光幕内，杨开心急如焚，他有心帮忙，奈何实力太低，根本插不上手，只能守护在夏凝裳身边，待万一光幕被破，好尽自己的一份绵薄之力。\n\n　　夏凝裳的动作越来越快，两只手已经舞成了残影，山谷内的阴风呼啸越来越猛烈，听着如鬼哭狼嚎，让人心头惊悚。\n\n　　文飞尘面色凝重中带有一丝贪婪，他发现自己还是低估了这个防御秘宝的等级，这至少是一件天级上品的防御秘宝，否则根本不可能支持这么长时间而不破。\n\n　　天级上品啊，足以抵挡住神游境高手的全力一击，有这东西，就等于多了一条命。\n\n　　足足一炷香的时间后，那光幕上突然出现了一道小小的裂缝。\n\n　　伴随着裂缝的出现，夏凝裳的面色也是一白！催动这个防御秘宝，她也耗费了\n\n---\n\n# 结构参考（IR，仅供参考，自主取舍）\n\n{\n  \"narrative_intent\": \"铁扇公主和七公主在花果山大战\",\n  \"move_guidance\": [\n    {\n      \"move_id\": 1,\n      \"name\": \"atmospheric_setup\",\n      \"description\": \"以超自然意象建立压抑、不祥的环境基调，激活读者对阴邪力量的感官警觉\",\n      \"core_idea\": \"夏凝裳启动阵法引发山谷阴气暴动，如沸水翻滚，营造出即将失控的灾厄临界感\",\n      \"emotional_beats\": [\n        \"ominous\",\n        \"unsettling\",\n        \"visceral\",\n        \"claustrophobic\"\n      ],\n      \"references\": [\n        \"novel_45116227#0093\"\n      ],\n      \"priority\": \"high\"\n    },\n    {\n      \"move_id\": 2,\n      \"name\": \"threat_introduction\",\n      \"description\": \"通过高手视角确认危机等级，将模糊危险转化为具象化、高利害的行动指令\",\n      \"core_idea\": \"文飞尘识别阵法威胁并下令强攻光幕，将抽象‘变故’具象为‘擒拿失败即万事皆休’的生存倒计时\",\n      \"emotional_beats\": [\n        \"urgent\",\n        \"authoritative\",\n        \"menacing\",\n        \"escalating\"\n      ],\n      \"references\": [\n        \"novel_45116227#0093\"\n      ],\n      \"priority\": \"high\"\n    },\n    {\n      \"move_id\": 3,\n      \"name\": \"power_hierarchy_display\",\n      \"description\": \"用群体协作与能力落差揭示修真世界的力量秩序和角色功能定位\",\n      \"core_idea\": \"风雨楼小角色被迫参战却攻击微弱，杨开守在阵内无力干预，凸显实力断层与结构性无助\",\n      \"emotional_beats\": [\n        \"helpless\",\n        \"hierarchical\",\n        \"frustrated\",\n        \"resigned\"\n      ],\n      \"references\": [\n        \"novel_45116227#0093\"\n      ],\n      \"priority\": \"high\"\n    },\n    {\n      \"move_id\": 4,\n      \"name\": \"resource_revelation\",\n      \"description\": \"揭露关键道具的稀缺性价值，将防御机制升格为战略级争夺焦点\",\n      \"core_idea\": \"文飞尘识破光幕为天级上品秘宝，赋予其‘等同多一条命’的修真经济逻辑，使攻防对抗获得系统性重量\",\n      \"emotional_beats\": [\n        \"covetous\",\n        \"awed\",\n        \"calculating\",\n        \"heightened_stakes\"\n      ],\n      \"references\": [\n        \"novel_45116227#0093\"\n      ],\n      \"priority\": \"medium\"\n    },\n    {\n      \"move_id\": 5,\n      \"name\": \"dual_expenditure\",\n      \"description\": \"同步展现施术者与防御者的双重消耗，以生理代价强化紧张的真实感与悲壮感\",\n      \"core_idea\": \"夏凝裳面色惨白、元气溃泄，光幕裂隙初现；杨开心焦守护——防御不是静态屏障，而是生命能量的实时燃烧\",\n      \"emotional_beats\": [\n        \"exhausted\",\n        \"desperate\",\n        \"fragile\",\n        \"sacrificial\"\n      ],\n      \"references\": [\n        \"novel_45116227#0093\"\n      ],\n      \"priority\": \"medium\"\n    },\n    {\n      \"move_id\": 6,\n      \"name\": \"climax_precipitation\",\n      \"description\": \"用标志性动作与声效触发不可逆的结构转折点，制造‘崩解已开始’的确定性临界信号\",\n      \"core_idea\": \"文飞尘打出蓄势一掌，光幕剧烈震颤，夏凝裳躯体剧震；随后‘咔嚓嚓’声中蛛网裂纹蔓延——防御体系进入不可逆崩溃进程\",\n      \"emotional_beats\": [\n        \"shattering\",\n        \"inevitable\",\n        \"triumphant\",\n        \"dreadful\"\n      ],\n      \"references\": [\n        \"novel_45116227#0093\"\n      ],\n      \"priority\": \"medium\"\n    }\n  ]\n}\n\n---\n\n# 创作要求\n\n1. 根据视频比例和风格，设计合适的画面构图和运镜方式。\n2. 根据目标时长，合理分配分镜数量（建议每个分镜 3-5 秒）。\n3. 旁白需求决定是否需要在分镜中包含旁白文字。\n4. 情绪基调决定了整体的故事氛围和表达方式。\n5. AIGC 指令密度决定了你需要给出的执行指令的详细程度：\n   - strict：详细的执行指令，减少创意描述\n   - balanced：兼顾创意描述和执行指令\n   - cinematic：偏重创意描述，执行指令简洁\n\n6. 每个镜头都给出负向约束思路（避免角色融合、肢体异常、现代穿帮、构图混乱）。\n7. 如果配置为 strict，优先结构化指令，弱化文学性修饰；如果 cinematic，可保留少量诗性表达；balanced 介于两者之间。\n\n# 输出要求（严格）\n请严格按下面格式输出（不要添加任何开场白和结尾语）：\n\n```\n## 剧本概览\n故事核心：[一句话概括故事核心冲突和主题]\n\n## 分镜设计\n- **[分镜1名称]** - [创意层]... [执行层]... [运镜]...\n- **[分镜2名称]** - [创意层]... [执行层]... [运镜]...\n- **[分镜3名称]** - [创意层]... [执行层]... [运镜]...\n- **[分镜4名称]** - [创意层]... [执行层]... [运镜]...\n- **[分镜5名称]** - [创意层]... [执行层]... [运镜]...\n- **[分镜6名称]** - [创意层]... [执行层]... [运镜]...\n- **[分镜7名称]** - [创意层]... [执行层]... [运镜]...\n- **[分镜8名称]** - [创意层]... [执行层]... [运镜]...\n\n## 视觉风格\n[描述整体视觉风格，包括色调、光影、构图等]\n\n## AIGC执行规格(JSON)\n{\n  \"density\": \"balanced\",\n  \"global_negative\": [\n    \"禁止多余肢体/手指畸形\",\n    \"禁止角色融合成单人\",\n    \"禁止现代元素穿帮\",\n    \"禁止画面文字乱码\"\n  ],\n  \"reference_trace\": {\n    \"retrieval_refs\": [\"novel_id#node_id\"],\n    \"used_refs\": [\"novel_id#node_id\"],\n    \"unused_refs\": [\"novel_id#node_id\"],\n    \"unused_reasons\": [\n      {\n        \"ref_id\": \"novel_id#node_id\",\n        \"reason\": \"未参考原因（如：与当前叙事不匹配、风格冲突、信息重复）\"\n      }\n    ],\n    \"overall_reason\": \"简要说明本次参考策略与取舍依据\"\n  },\n  \"characters\": [\n    {\n      \"name\": \"角色名\",\n      \"role\": \"主角|配角|功能性角色\",\n      \"appearance\": {\n        \"age\": \"年龄描述（如：二十出头、八十余岁）\",\n        \"identity\": \"身份特征（如：武当派祖师、明教教主）\",\n        \"features\": \"外观特征（如：白发白须仙风道骨，身着灰色道袍）\"\n      },\n      \"voice\": \"声音特质（如：沉稳低沉，带有洞察世事的从容）\",\n      \"description\": \"角色简介\"\n    }\n  ],\n  \"scenes\": [\n    {\n      \"name\": \"场景名称\",\n      \"description\": \"场景描述\"\n    }\n  ],\n  \"props\": [\n    {\n      \"name\": \"道具名称\",\n      \"type\": \"关键道具|普通道具\"\n    }\n  ],\n  \"shots\": [\n    {\n      \"id\": 1,\n      \"name\": \"镜头名称\",\n      \"shotName\": \"镜头名称\",\n      \"director_brief\": \"创意层一句话\",\n      \"summary\": \"该镜头一句话摘要（<=80字）\",\n      \"visualDesc\": \"画面描述\",\n      \"narration\": \"旁白文字（没有旁白则为空字符串）\",\n      \"hasNarration\": true,\n      \"source_refs\": [\"novel_id#node_id\"],\n      \"source_reason\": \"为何参考这些 source_refs（若有）\",\n      \"no_source_reason\": \"若 source_refs 为空，说明未参考原因\",\n      \"duration\": \"3.0s\",\n      \"render_spec\": {\n        \"scene_anchor\": \"地点+时间+天气\",\n        \"subject_layout\": \"人物左右站位/远近关系/间距\",\n        \"appearance_lock\": \"服饰与角色锚点\",\n        \"motion_vector\": \"动作+方向+速度\",\n        \"camera_path\": \"机位+运动轨迹+速度\",\n        \"light_color\": \"主光/辅光/色温\",\n        \"fx\": \"粒子/雾/能量等特效\",\n        \"style_tokens\": [\"不超过5个风格词\"],\n        \"negative_prompt\": [\"该镜头禁止项\"],\n        \"continuity_keys\": [\"与上镜头保持一致的关键点\"]\n      }\n    }\n  ]\n}\n```\n\n注意事项：\n1. 分镜数量根据目标时长灵活安排，建议 6-10 个镜头。\n2. 分镜文本中必须有明确主体、动作、镜头信息，避免纯抽象意象句。\n3. 视觉风格要与情绪基调一致，且和 AIGC 执行规格保持一致。\n4. AIGC执行规格中的 shots 数量与分镜设计数量保持一致。\n5. 严格按照格式输出，不要添加任何开场白和结尾语。\n6. characters 规则：\n   - 只提取真正参与叙事的人物，严禁将镜头术语、地名、抽象概念、物品当作角色。\n   - \"旁白\"、\"游客\"、\"路人\"等功能性角色也要提取，role 标为\"功能性角色\"。\n   - role 只能是\"主角\"、\"配角\"、\"功能性角色\"三选一。\n   - appearance 中 age/identity/features 必须填写（功能性角色如旁白可留空 age 和 features）。\n   - voice 描述该角色的声音特质。\n7. scenes 要列出剧本中出现的所有场景地点，去重。\n8. props 要列出剧本中出现的关键物品/道具，区分\"关键道具\"和\"普通道具\"。\n9. shots 中每个镜头的 shotName 与分镜设计中的名称一致，第一个镜头的 narration 应为故事开场旁白。\n10. shots 中必须提供 source_refs（可为空数组），若参考了检索素材，请写入 novel_id#node_id。\n11. move/IR 仅作为参考，不要求机械一一映射；请在叙事自然性的前提下合理借鉴。\n12. 每个镜头必须给出参考决策说明：\n   - source_refs 非空时，source_reason 必填，no_source_reason 置空字符串。\n   - source_refs 为空时，no_source_reason 必填，source_reason 置空字符串。\n13. reference_trace 必填，用于总结哪些参考被使用/未使用及原因。\n",
+  "final_result": {
+    "content": "```\n## 剧本概览\n故事核心：铁扇公主与七公主在花果山桃林间因误会拔剑相向，却在烈焰与冰霜交汇的刹那，发现彼此守护的竟是同一片被瘴气侵蚀的灵根桃树——大战终化为协力净化，温情破开戾气。\n\n## 分镜设计\n- **[桃云初涌]** - 暖金斜阳漫过花果山千叠青峦，粉白桃花如雪纷扬；镜头俯拍推移，桃林深处浮起淡青瘴气，如活物般缠绕古桃树根部... 无人机式缓降俯角+微粒子飘散特效...  \n- **[双影临风]** - 铁扇公主踏云而落，火纹披风猎猎，芭蕉扇未展已灼热蒸腾；七公主自溪涧跃出，素纱广袖凝霜，足尖点水绽出冰晶涟漪... 中景双人对峙构图，左右平衡，风向分隔冷热气流...  \n- **[扇起炎龙]** - 芭蕉扇猛然展开，赤焰化三首炎龙咆哮扑出，鳞爪撕裂空气；桃瓣在热浪中焦卷翻飞，地面龟裂泛红光... 低角度仰拍+快速横摇追随炎龙轨迹，火焰粒子高透光感...  \n- **[袖卷寒渊]** - 七公主双袖旋舞，万点寒星迸射，凝成冰棱巨蟒反噬，霜雾所至桃枝覆晶、溪水瞬冻... 推镜聚焦袖口冰纹脉动，冷蓝主光+霜粒慢速飞散...  \n- **[焰霜相蚀]** - 炎龙与冰蟒轰然对撞！中心爆开半透明虹彩冲击波，桃树震颤，百年老根裸露处渗出幽绿毒液... 全景定帧+0.5秒静音，随后“滋啦”声效切入...  \n- **[根脉微光]** - 特写：被瘴气腐蚀的桃树主根突然泛起柔金微光，一缕细小藤蔓挣扎探出，触碰铁扇公主落下的火灰与七公主融化的霜水... 微距镜头，浅景深，暖光渐染冷调...  \n- **[共护之誓]** - 二人同时收势，目光交汇于树根微光；铁扇公主将扇尖轻点树干，七公主掌心托起一捧清泉浇灌——火息温养，寒气凝络... 双人侧身同框，逆光勾勒温柔剪影...  \n- **[春愈满山]** - 桃林瘴气如墨滴入清水般消散，新芽破土，粉白桃花重绽，一只小猴攀上枝头摘下第一颗晶莹桃实... 升格镜头（120fps）+全景环移，光斑随花瓣旋转...\n\n## 视觉风格\n动漫风，色调以「暖桃粉×冷月白」为基底，辅以「金曦光晕」与「青霜粒子」作情绪锚点；光影强调体积感与通透性——火焰非纯红而带琥珀透光，寒气非死蓝而含银灰呼吸感；构图善用桃枝天然框架分割画面，动静节奏依旁白呼吸感设计，杜绝扁平贴图感。",
+    "script_data": {
+      "title": "铁扇公主和七公主在花果山大战",
+      "totalShots": 8,
+      "totalDuration": "24 秒",
+      "style": "动漫风",
+      "requirements": "铁扇公主和七公主在花果山大战",
+      "synopsis": "铁扇公主与七公主在花果山桃林间因误会拔剑相向，却在烈焰与冰霜交汇的刹那，发现彼此守护的竟是同一片被瘴气侵蚀的灵根桃树——大战终化为协力净化，温情破开戾气。",
+      "packagingStyle": "动漫风，色调以「暖桃粉×冷月白」为基底，辅以「金曦光晕」与「青霜粒子」作情绪锚点；光影强调体积感与通透性——火焰非纯红而带琥珀透光，寒气非死蓝而含银灰呼吸感；构图善用桃枝天然框架分割画面，动静节奏依旁白呼吸感设计，杜绝扁平贴图感。",
+      "characters": [
+        {
+          "id": "1",
+          "name": "铁扇公主",
+          "role": "主角",
+          "appearance": {
+            "age": "三十许，风韵英飒",
+            "identity": "翠云山芭蕉洞主，火焰掌控者",
+            "features": "丹凤眼含威而不厉，赤金束发带缀火纹玉珏，绛红劲装配玄纹火纹披风，腰悬未出鞘芭蕉扇"
+          },
+          "voice": "清越中带沉稳磁性，语速从容如风过松林",
+          "description": "表面刚毅守界，实则深谙火之温养本性；此战只为试探瘴气源头是否伤及桃山灵脉"
+        },
+        {
+          "id": "2",
+          "name": "七公主",
+          "role": "主角",
+          "appearance": {
+            "age": "二十出头，皎若秋月",
+            "identity": "天河七仙女之一，寒魄净水使",
+            "features": "银丝缠腕，素白广袖绣冰晶暗纹，赤足踏水不湿，发间垂落两缕流光水链"
+          },
+          "voice": "清泠如泉击玉石，尾音微扬似有笑意",
+          "description": "奉命巡查下界水脉，察觉花果山桃根异毒，误认铁扇公主纵火毁源"
+        },
+        {
+          "id": "3",
+          "name": "旁白",
+          "role": "功能性角色",
+          "appearance": {
+            "age": "",
+            "identity": "无实体叙事者",
+            "features": ""
+          },
+          "voice": "温和慈霭的女声，略带笑意与岁月沉淀感",
+          "description": "以长者视角娓娓道来，赋予战斗以诗意与哲思"
+        }
+      ],
+      "scenes": [
+        {
+          "id": "1",
+          "name": "花果山·桃源涧",
+          "description": "层叠青峰环抱的幽谷，中央古桃树虬根盘错，溪水清冽见底，两岸野桃盛放，空中常年浮着薄如轻纱的桃云"
+        }
+      ],
+      "props": [
+        {
+          "id": "1",
+          "name": "芭蕉扇",
+          "type": "关键道具"
+        },
+        {
+          "id": "2",
+          "name": "七仙女水链",
+          "type": "关键道具"
+        },
+        {
+          "id": "3",
+          "name": "灵根桃树",
+          "type": "关键道具"
+        }
+      ],
+      "shots": [
+        {
+          "id": 1,
+          "duration": "4.2s",
+          "summary": "航拍视角掠过花果山桃林，暖阳下粉白花海中悄然浮起不祥青瘴，缠绕古桃树根部",
+          "narration": "花果山的春天，从来不是静止的画卷——它呼吸，它警醒，它在最柔软的花瓣下，藏着最坚韧的根脉。",
+          "hasNarration": true,
+          "source_refs": [],
+          "source_reason": "",
+          "no_source_reason": "未参考检索素材，因其阴邪基调与本镜头heartwarming桃源意境完全相斥",
+          "visualDesc": "16:9横屏，高空俯角缓降，千株野桃盛放，花瓣随微风螺旋飘落；中景桃树主干苍劲，裸露根系泛青灰瘴气，如活体脉动",
+          "shotName": "桃云初涌"
+        },
+        {
+          "id": 2,
+          "duration": "3.8s",
+          "summary": "铁扇公主自东云而降，热浪扭曲空气；七公主从西溪跃出，足下凝霜；二人遥遥相对，桃林风线从中劈开",
+          "narration": "她执扇而来，不是为焚尽春色；她踏水而至，亦非为冻绝生机——只是两股清流，暂未认出彼此奔涌的方向。",
+          "hasNarration": true,
+          "source_refs": [],
+          "source_reason": "",
+          "no_source_reason": "未参考检索素材，其‘文飞尘怒吼’‘风雨楼小角色’等权谋对抗设定与本剧纯净双女主关系无关",
+          "visualDesc": "中景双人对称构图，左1/3铁扇公主踏赤云而落，披风后扬，地面草叶微卷；右1/3七公主足尖点溪，水波冻结成环形冰晶；中央桃树为视觉轴线，风拂花瓣向两侧分流",
+          "shotName": "双影临风"
+        },
+        {
+          "id": 3,
+          "duration": "4.0s",
+          "summary": "芭蕉扇展开刹那，赤焰腾空化三首炎龙，龙首齐齐俯向桃树根部，灼烧缠绕的青瘴",
+          "narration": "火，从来不是暴烈的代名词——它是最古老的守夜人，只焚邪祟，不伤寸木。",
+          "hasNarration": true,
+          "source_refs": [],
+          "source_reason": "",
+          "no_source_reason": "未参考检索素材，其‘光幕摇摇欲坠’‘文飞尘贪婪’等防御崩溃描写与本剧主动净化逻辑相悖",
+          "visualDesc": "低角度仰拍，铁扇公主立于前景，扇面占画面1/4；三条赤金炎龙自扇面腾跃而出，身躯蜿蜒却不张牙，龙首喷吐金焰精准覆盖桃根瘴气区",
+          "shotName": "扇起炎龙"
+        },
+        {
+          "id": 4,
+          "duration": "4.0s",
+          "summary": "七公主旋袖挥洒，万点寒星聚为冰棱巨蟒，无声盘绕桃树根部，霜雾冻结瘴气并析出毒素结晶",
+          "narration": "寒，亦非寂灭的终章——它是最精密的织网，冻住流毒，留下生机。",
+          "hasNarration": true,
+          "source_refs": [],
+          "source_reason": "",
+          "no_source_reason": "未参考检索素材，其‘风雨楼小角色攻击微弱’等群像消耗描写与本剧双主角精微操控理念不符",
+          "visualDesc": "中景侧跟镜头，七公主立于右前方，素袖扬起如鹤翼；冰棱巨蟒由无数六棱冰晶咬合而成，通体流转银辉，首尾轻环桃根，霜雾弥漫中青瘴凝为幽绿碎晶簌簌剥落",
+          "shotName": "袖卷寒渊"
+        },
+        {
+          "id": 5,
+          "duration": "3.5s",
+          "summary": "炎龙与冰蟒首尾相触瞬间，爆开半透明虹彩冲击波，桃树震颤，裸露根部渗出幽绿毒液随即被金光包裹",
+          "narration": "当最炽热的守与最澄澈的净相遇——那不是毁灭的轰鸣，而是万物重归本真的，一声轻响。",
+          "hasNarration": true,
+          "source_refs": [],
+          "source_reason": "",
+          "no_source_reason": "未参考检索素材，其‘光幕裂缝’‘夏凝裳面色惨白’等损伤性描写违背本剧能量正向转化核心",
+          "visualDesc": "全景定帧，炎龙与冰蟒交触点爆发柔和虹彩涟漪（红橙黄绿青蓝紫同心圆），桃树剧烈但不崩坏地震颤，主根裂隙中涌出幽绿毒液，随即被一圈新生金光温柔包裹",
+          "shotName": "焰霜相蚀"
+        },
+        {
+          "id": 6,
+          "duration": "4.5s",
+          "summary": "特写桃树主根，金光自木质深处透出，一缕嫩芽顶开焦土，同时触碰火灰与融霜水，微微颤动",
+          "narration": "原来最深的根，早知道该向哪一缕光伸展——它不选火，也不择冰，它只认得，那光里有没有爱。",
+          "hasNarration": true,
+          "source_refs": [],
+          "source_reason": "",
+          "no_source_reason": "未参考检索素材，其‘杨开心焦守护’等无力感描写与本剧生命自主觉醒主题相悖",
+          "visualDesc": "微距镜头，景深极浅，焦点在桃根表皮裂隙；金光如呼吸般明灭，嫩芽破土，尖端同时沾着一点赤灰与一滴水珠，在光中折射七彩",
+          "shotName": "根脉微光"
+        },
+        {
+          "id": 7,
+          "duration": "4.0s",
+          "summary": "二人同时收势，目光交汇于桃根微光；铁扇公主扇尖轻点树干，七公主掌心清泉缓缓浇灌，火息与寒气在根部交融成温润光晕",
+          "narration": "从此，火是她的薪柴，冰是她的清露——而桃山的春天，再不必在冷暖之间抉择。",
+          "hasNarration": true,
+          "source_refs": [],
+          "source_reason": "",
+          "no_source_reason": "未参考检索素材，其‘文飞尘识破秘宝等级’等功利性价值判断与本剧去功利化情感联结无关",
+          "visualDesc": "双人侧身同框中景，铁扇公主左手轻按扇柄，扇尖距桃树1cm；七公主右掌平托，清泉如镜面悬浮；桃根处升腾暖金与银蓝交织的柔光雾",
+          "shotName": "共护之誓"
+        },
+        {
+          "id": 8,
+          "duration": "5.0s",
+          "summary": "瘴气如墨融水般消散，新芽疯长，桃花重绽；小猴攀枝摘下首颗晶莹桃实，果面映出双女主微笑倒影",
+          "narration": "你看——当两双手愿意同时托起一棵树，整座山，便再没有冬天。",
+          "hasNarration": true,
+          "source_refs": [],
+          "source_reason": "",
+          "no_source_reason": "未参考检索素材，其‘一炷香时间’‘裂缝初现’等时间紧迫感与本剧舒缓治愈节奏相悖",
+          "visualDesc": "全景环移升格镜头（120fps），桃林由青灰转为粉白，新叶舒展，桃花层层绽放；镜头掠过枝头，小猴（毛色金褐）轻巧摘桃，桃实饱满剔透，表面清晰映出铁扇公主与七公主并肩而立的微小倒影",
+          "shotName": "春愈满山"
+        }
+      ],
+      "aigcSpec": {
+        "density": "balanced",
+        "global_negative": [
+          "禁止多余肢体/手指畸形",
+          "禁止角色融合成单人",
+          "禁止现代元素穿帮",
+          "禁止画面文字乱码",
+          "禁止桃树出现塑料质感或几何僵硬枝干"
+        ],
+        "shots": [
+          {
+            "id": 1,
+            "name": "桃云初涌",
+            "director_brief": "以桃云与瘴气的视觉对位开启宁静中的危机伏笔",
+            "source_refs": [],
+            "source_reason": "",
+            "no_source_reason": "未参考检索素材，因其阴邪基调与本镜头heartwarming桃源意境完全相斥",
+            "render_spec": {
+              "scene_anchor": "花果山桃源涧·申时·晴，微风",
+              "subject_layout": "桃林全域为背景，瘴气仅集中于画面中央偏下1/3处古桃树根部",
+              "appearance_lock": "桃树须有真实木质肌理与自然虬结形态；瘴气呈半透明青灰絮状，缓慢蠕动但不扩散出根域",
+              "motion_vector": "镜头匀速下降0.8m/s，花瓣以螺旋轨迹缓慢下坠",
+              "camera_path": "无人机垂直缓降+轻微右横移，保持桃树始终居中",
+              "light_color": "主光：色温5500K暖金斜阳；辅光：天光漫反射，柔和无硬阴影",
+              "fx": "花瓣粒子（12fps飘落）、瘴气微流动（速度0.3px/frame）",
+              "style_tokens": [
+                "anime",
+                "luminous",
+                "pastel",
+                "organic",
+                "serene"
+              ],
+              "negative_prompt": [
+                "dark fantasy",
+                "horror lighting",
+                "smoke texture",
+                "industrial elements",
+                "text overlay"
+              ],
+              "continuity_keys": [
+                "桃树位置",
+                "瘴气浓度",
+                "花瓣密度"
+              ]
+            }
+          },
+          {
+            "id": 2,
+            "name": "双影临风",
+            "director_brief": "用风向与温度的可视化区分建立角色气质，避免脸谱化对立",
+            "source_refs": [],
+            "source_reason": "",
+            "no_source_reason": "未参考检索素材，其‘文飞尘怒吼’‘风雨楼小角色’等权谋对抗设定与本剧纯净双女主关系无关",
+            "render_spec": {
+              "scene_anchor": "桃源涧中央空地·申时·晴，微风",
+              "subject_layout": "铁扇公主位于画面左30%，七公主位于右30%，桃树居中10%，间距保持自然威慑距离（约8步）",
+              "appearance_lock": "铁扇公主披风纹路需清晰可见火纹暗绣；七公主袖口冰晶须有折射光斑",
+              "motion_vector": "铁扇公主缓降落地（0.5s），七公主轻跃点水（0.3s），花瓣持续双向飘散",
+              "camera_path": "固定机位，微仰角15°，保持双人肩线水平",
+              "light_color": "主光：统一5500K暖阳；热区加琥珀色边缘光，寒区加银蓝轮廓光",
+              "fx": "热浪扭曲（强度0.2）、冰晶微光（亮度+15%）",
+              "style_tokens": [
+                "anime",
+                "balanced",
+                "contrapuntal",
+                "elegant",
+                "atmospheric"
+              ],
+              "negative_prompt": [
+                "aggressive pose",
+                "weapon drawn",
+                "facial scowling",
+                "blood or injury",
+                "modern clothing"
+              ],
+              "continuity_keys": [
+                "桃树位置",
+                "风向一致性",
+                "光影色温"
+              ]
+            }
+          },
+          {
+            "id": 3,
+            "name": "扇起炎龙",
+            "director_brief": "火焰具象为三首炎龙，强调‘护’而非‘毁’的动能——龙首低垂，爪向桃根而非人物",
+            "source_refs": [],
+            "source_reason": "",
+            "no_source_reason": "未参考检索素材，其‘光幕摇摇欲坠’‘文飞尘贪婪’等防御崩溃描写与本剧主动净化逻辑相悖",
+            "render_spec": {
+              "scene_anchor": "桃源涧中央空地·申时·晴，微风",
+              "subject_layout": "铁扇公主位于画面底部中线，炎龙主体朝向画面中央偏下（桃根位置）",
+              "appearance_lock": "炎龙须有半透明琥珀质感，鳞片边缘透光；桃根瘴气受热后呈汽化消散态",
+              "motion_vector": "扇面展开（0.4s）→炎龙腾跃（0.8s）→龙首俯冲灼烧（2.0s）",
+              "camera_path": "低角度固定，轻微前推0.3m增强压迫感",
+              "light_color": "主光：赤金焰光（色温2200K）；辅光：保留环境暖阳底色",
+              "fx": "火焰粒子（高透光）、热浪扭曲（强度0.4）、瘴气蒸发粒子（青灰渐隐）",
+              "style_tokens": [
+                "anime",
+                "dynamic",
+                "luminous",
+                "protective",
+                "mythic"
+              ],
+              "negative_prompt": [
+                "fireball explosion",
+                "character injury",
+                "background burning",
+                "smoke plume",
+                "chaotic motion"
+              ],
+              "continuity_keys": [
+                "桃根位置",
+                "瘴气残留量",
+                "炎龙朝向"
+              ]
+            }
+          },
+          {
+            "id": 4,
+            "name": "袖卷寒渊",
+            "director_brief": "冰霜以‘凝络’为意象，冰棱巨蟒形态优雅盘绕桃根，非攻击而是封印",
+            "source_refs": [],
+            "source_reason": "",
+            "no_source_reason": "未参考检索素材，其‘风雨楼小角色攻击微弱’等群像消耗描写与本剧双主角精微操控理念不符",
+            "render_spec": {
+              "scene_anchor": "桃源涧中央空地·申时·晴，微风",
+              "subject_layout": "七公主位于画面右前1/4，冰蟒主体环绕桃根（画面中央偏下）",
+              "appearance_lock": "冰棱巨蟒每节冰晶须有独立折射光斑；霜雾呈半透明珠光质感",
+              "motion_vector": "袖扬（0.3s）→寒星汇聚（0.5s）→冰蟒成形盘绕（2.2s）→毒素结晶剥落（1.0s）",
+              "camera_path": "中景侧跟，镜头随袖势右移15°",
+              "light_color": "主光：银蓝寒光（色温8000K）；保留环境暖阳作为背光",
+              "fx": "冰晶折射光（动态）、霜雾粒子（慢速沉降）、毒素结晶（微光闪烁）",
+              "style_tokens": [
+                "anime",
+                "elegant",
+                "crystalline",
+                "calm",
+                "purifying"
+              ],
+              "negative_prompt": [
+                "ice spikes pointing at character",
+                "frostbite effect",
+                "character shivering",
+                "aggressive motion",
+                "dark shadows"
+              ],
+              "continuity_keys": [
+                "桃根位置",
+                "毒素结晶形态",
+                "冰蟒盘绕结构"
+              ]
+            }
+          },
+          {
+            "id": 5,
+            "name": "焰霜相蚀",
+            "director_brief": "碰撞不取爆炸，而取‘虹彩共振’——能量交融产生净化性光波",
+            "source_refs": [],
+            "source_reason": "",
+            "no_source_reason": "未参考检索素材，其‘光幕裂缝’‘夏凝裳面色惨白’等损伤性描写违背本剧能量正向转化核心",
+            "render_spec": {
+              "scene_anchor": "桃源涧中央空地·申时·晴，微风",
+              "subject_layout": "交触点位于画面正中心，桃树全貌清晰，虹彩涟漪均匀扩散",
+              "appearance_lock": "虹彩须为半透明水波纹质感，无刺眼高光；毒液呈粘稠幽绿，金光为柔光晕染非实体光束",
+              "motion_vector": "冲击波扩散（1.2s）→桃树震颤（0.8s）→毒液渗出+金光包裹（1.5s）",
+              "camera_path": "固定全景，0.5秒静帧后启动微缩抖动模拟震感",
+              "light_color": "主光：虹彩多光谱混合（动态色温）；金光：色温3200K柔暖光",
+              "fx": "虹彩涟漪（流体模拟）、震颤模糊（强度0.3）、金光晕染（渐变透明度）",
+              "style_tokens": [
+                "anime",
+                "harmonious",
+                "resonant",
+                "gentle",
+                "transformational"
+              ],
+              "negative_prompt": [
+                "explosion debris",
+                "character recoil",
+                "blood splatter",
+                "sharp edges",
+                "high contrast"
+              ],
+              "continuity_keys": [
+                "桃树完整性",
+                "毒液位置",
+                "金光覆盖范围"
+              ]
+            }
+          },
+          {
+            "id": 6,
+            "name": "根脉微光",
+            "director_brief": "微距呈现生命本能——微光来自桃树自身，非外力赋予",
+            "source_refs": [],
+            "source_reason": "",
+            "no_source_reason": "未参考检索素材，其‘杨开心焦守护’等无力感描写与本剧生命自主觉醒主题相悖",
+            "render_spec": {
+              "scene_anchor": "桃源涧桃树主根·申时·晴，微风",
+              "subject_layout": "仅桃根局部，嫩芽位于画面黄金分割点",
+              "appearance_lock": "嫩芽须有真实植物绒毛与水润质感；火灰与水珠必须同时存在于芽尖",
+              "motion_vector": "金光脉动（频率0.8Hz）→嫩芽微颤（幅度0.5px）→水珠滑落（0.3s）",
+              "camera_path": "微距固定，焦点随金光明暗微调",
+              "light_color": "主光：3200K暖金（模拟生命光）；环境光保留5500K底色",
+              "fx": "金光脉动（辉光强度变化）、水珠折射（实时渲染）、嫩芽微颤（物理模拟）",
+              "style_tokens": [
+                "anime",
+                "tender",
+                "microscopic",
+                "luminous",
+                "hopeful"
+              ],
+              "negative_prompt": [
+                "insect",
+                "dirt texture only",
+                "dry wood",
+                "artificial lighting",
+                "textured overlay"
+              ],
+              "continuity_keys": [
+                "嫩芽位置",
+                "火灰与水珠共存状态",
+                "金光起源点"
+              ]
+            }
+          },
+          {
+            "id": 7,
+            "name": "共护之誓",
+            "director_brief": "动作同步体现心意相通——扇尖轻点与掌心托泉构成镜像仪式感",
+            "source_refs": [],
+            "source_reason": "",
+            "no_source_reason": "未参考检索素材，其‘文飞尘识破秘宝等级’等功利性价值判断与本剧去功利化情感联结无关",
+            "render_spec": {
+              "scene_anchor": "桃源涧桃树前·申时·晴，微风",
+              "subject_layout": "二人并肩立于桃树左侧，间距一步，均面向桃树；桃树占画面1/3",
+              "appearance_lock": "扇尖与掌心高度一致；清泉表面须有真实水纹与倒影；交融光晕呈珍珠母贝色",
+              "motion_vector": "目光交汇（0.5s）→扇尖轻点（0.3s）→清泉倾注（2.0s）→光晕升腾（1.2s）",
+              "camera_path": "固定中景，微仰角10°，突出二人与桃树关系",
+              "light_color": "主光：融合光晕色温4500K；背光：暖阳勾勒发丝轮廓",
+              "fx": "清泉流动（流体模拟）、光晕升腾（粒子缓升）、发丝微扬（风效）",
+              "style_tokens": [
+                "anime",
+                "harmonious",
+                "ritualistic",
+                "warm",
+                "unified"
+              ],
+              "negative_prompt": [
+                "separate lighting",
+                "asymmetric pose",
+                "weapon threat",
+                "facial tension",
+                "hard shadows"
+              ],
+              "continuity_keys": [
+                "桃树状态",
+                "光晕色彩",
+                "二人手部位置"
+              ]
+            }
+          },
+          {
+            "id": 8,
+            "name": "春愈满山",
+            "director_brief": "以升格镜头强化新生仪式感，小猴摘桃为点睛之笔，呼应花果山本源",
+            "source_refs": [],
+            "source_reason": "",
+            "no_source_reason": "未参考检索素材，其‘一炷香时间’‘裂缝初现’等时间紧迫感与本剧舒缓治愈节奏相悖",
+            "render_spec": {
+              "scene_anchor": "桃源涧全景·申时·晴，微风",
+              "subject_layout": "小猴位于画面右上1/4枝头，桃实居中，倒影需清晰可辨",
+              "appearance_lock": "桃实表面须有真实果蜡光泽与细微绒毛；倒影中二人姿态与前镜一致",
+              "motion_vector": "瘴气消散（1.5s）→新芽生长（1.0s）→桃花绽放（1.0s）→小猴摘桃（0.8s）→镜头环移收于桃实（0.7s）",
+              "camera_path": "升格全景环移，顺时针360°缓行，终点聚焦桃实",
+              "light_color": "主光：5500K暖阳；桃实高光加强（+20%）",
+              "fx": "升格粒子（花瓣慢速飘落）、倒影反射（实时渲染）、新叶生长（逐帧变形）",
+              "style_tokens": [
+                "anime",
+                "breathtaking",
+                "renewal",
+                "whimsical",
+                "heartwarming"
+              ],
+              "negative_prompt": [
+                "adult monkey",
+                "damaged fruit",
+                "blurry reflection",
+                "storm clouds",
+                "text or logo"
+              ],
+              "continuity_keys": [
+                "桃实位置",
+                "倒影内容",
+                "整体色调过渡"
+              ]
+            }
+          }
+        ],
+        "reference_trace": {
+          "retrieval_refs": [
+            "novel_45116227#0093"
+          ],
+          "used_refs": [],
+          "unused_refs": [
+            "novel_45116227#0093"
+          ],
+          "unused_reasons": [
+            {
+              "ref_id": "novel_45116227#0093",
+              "reason": "原文为阴邪阵法攻防，基调ominous/urgent，与本剧本heartwarming主题及花果山清新灵性场景存在根本性情绪与世界观冲突；其‘光幕裂隙’‘面色惨白’等消耗性描写亦违背‘温情化解’核心立意"
+            }
+          ],
+          "overall_reason": "严格遵循用户指定情绪基调（heartwarming），主动舍弃所有暗黑/压迫感强的参考素材，转而依托经典《西游记》角色内核与自然灵性美学重构叙事逻辑"
+        }
+      }
+    }
+  },
+  "source_ref_trace": {
+    "retrieval_ref_count": 1,
+    "used_ref_count": 0,
+    "retrieval_refs": [
+      "novel_45116227#0093"
+    ],
+    "used_refs": [],
+    "unused_refs": [
+      "novel_45116227#0093"
+    ]
+  },
+  "model_reference_trace": {
+    "retrieval_refs": [
+      "novel_45116227#0093"
+    ],
+    "used_refs": [],
+    "unused_refs": [
+      "novel_45116227#0093"
+    ],
+    "unused_reasons": [
+      {
+        "ref_id": "novel_45116227#0093",
+        "reason": "原文为阴邪阵法攻防，基调ominous/urgent，与本剧本heartwarming主题及花果山清新灵性场景存在根本性情绪与世界观冲突；其‘光幕裂隙’‘面色惨白’等消耗性描写亦违背‘温情化解’核心立意"
+      }
+    ],
+    "overall_reason": "严格遵循用户指定情绪基调（heartwarming），主动舍弃所有暗黑/压迫感强的参考素材，转而依托经典《西游记》角色内核与自然灵性美学重构叙事逻辑"
+  }
+}

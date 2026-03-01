@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.api.routes import router
+from src.api.storyboard_routes import router as storyboard_router
 from src.core.config import settings
 from src.core.logger import get_logger
 
@@ -54,6 +55,7 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(router, prefix="/api/v1")
+app.include_router(storyboard_router, prefix="/api/v1/storyboard")
 
 
 @app.get("/", include_in_schema=False)

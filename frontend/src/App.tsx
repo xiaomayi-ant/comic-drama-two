@@ -47,7 +47,21 @@ interface ToolStep {
   detail?: string;
 }
 
-// ── 节点展示映射：将后端节点名聚合为用户友好的步骤 ──
+// ── 过滤内容中的 AIGC执行规格和 JSON 结构 ──
+function filterAIGCContent(content: string): string {
+  let result = content;
+  // 过滤 ## AIGC执行规格(JSON) 部分
+  result = result.replace(
+    /## AIGC执行规格\(JSON\)[\s\S]*?(?=\n## |\n\n|\Z)/gi,
+    ''
+  );
+  // 过滤底部的 JSON 数组部分（以 [ 开头，包含 "id": 或 "name": 的 JSON）
+  result = result.replace(
+    /\n\[\s*\{\s*"id":[\s\S]*/g,
+    ''
+  );
+  return result.trim();
+}
 const NODE_DISPLAY_MAP: Record<string, string> = {
   intent_analysis:   '设置意图和更新配置参数',
   breakdown:         '进行剧本生成',
@@ -63,6 +77,10 @@ const NODE_DISPLAY_MAP: Record<string, string> = {
   v2_creator:        '进行剧本生成',
   proofread:         '剧本审核与润色',
   v2_qc:             '剧本审核与润色',
+  load_reference:    '信息更新',
+  plan_story:        '剧本规划',
+  write_scenes:      '剧本生成',
+  finalize:          '剧本生成',
 };
 
 // 每个展示分组的"终结节点"——只有该节点 node_end 时才标记步骤完成
@@ -70,6 +88,9 @@ const GROUP_TERMINAL_NODES: Record<string, Set<string>> = {
   '设置意图和更新配置参数': new Set(['intent_analysis']),
   '进行剧本生成':         new Set(['verify', 'v2_creator']),
   '剧本审核与润色':       new Set(['proofread', 'v2_qc']),
+  '信息更新':             new Set(['load_reference']),
+  '剧本规划':             new Set(['plan_story']),
+  '剧本生成':             new Set(['finalize']),
 };
 
 interface ConfigOption {
@@ -165,19 +186,9 @@ function renderScriptContent(content: string) {
       return null;
     }
 
-    // 剧本概览
-    if (trimmed.startsWith('## 剧本概览')) {
-      return <h3 key={idx} className="text-lg font-bold mt-4 mb-2">剧本概览</h3>;
-    }
-    
-    // 分镜设计
-    if (trimmed.startsWith('## 分镜设计')) {
-      return <h3 key={idx} className="text-lg font-bold mt-4 mb-2">分镜设计</h3>;
-    }
-    
-    // 视觉风格
-    if (trimmed.startsWith('## 视觉风格')) {
-      return <h3 key={idx} className="text-lg font-bold mt-4 mb-2">视觉风格</h3>;
+    // 通用 ## 标题处理（去掉 ## 前缀，渲染为标题）
+    if (trimmed.startsWith('## ')) {
+      return <h3 key={idx} className="text-lg font-bold mt-4 mb-2">{trimmed.substring(3)}</h3>;
     }
     
     // 分镜项 - 匹配 - **[名称]** - 内容
@@ -212,6 +223,7 @@ export default function App() {
   const [formSelections, setFormSelections] = useState<Record<string, Record<string, string>>>({});
   const [submittedForms, setSubmittedForms] = useState<Set<string>>(new Set());
   const [collapsedForms, setCollapsedForms] = useState<Set<string>>(new Set());
+  const [countdowns, setCountdowns] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [currentUserInput, setCurrentUserInput] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -220,14 +232,23 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [scriptData, setScriptData] = useState<ScriptData | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const userScrolledUp = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleScroll = () => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    // 距底部超过 150px 则认为用户主动上滑
+    userScrolledUp.current = el.scrollHeight - el.scrollTop - el.clientHeight > 150;
+  };
+
   useEffect(() => {
-    if (isChatMode) {
+    if (isChatMode && !userScrolledUp.current) {
       scrollToBottom();
     }
   }, [messages, isChatMode]);
@@ -267,8 +288,13 @@ export default function App() {
   const handleConfigSubmit = async (msgId: string, configData: NonNullable<Message['configData']>) => {
     if (submittedForms.has(msgId)) return;
 
-    // Lock the form
+    // Lock the form and clear countdown
     setSubmittedForms(prev => new Set(prev).add(msgId));
+    setCountdowns(prev => {
+      const next = { ...prev };
+      delete next[msgId];
+      return next;
+    });
 
     // Build selections from formSelections (fall back to defaults)
     const selections: Record<string, string> = {};
@@ -366,6 +392,7 @@ export default function App() {
               ];
             });
           } else if (event.type === 'done') {
+            // 设置结构化数据
             if (event.script_data) {
               setScriptData(event.script_data);
             }
@@ -450,6 +477,40 @@ export default function App() {
     }
   };
 
+  // ── 倒计时：每秒 -1，到 0 自动提交 ──
+  useEffect(() => {
+    const activeMsgIds = Object.keys(countdowns).filter(
+      id => countdowns[id] > 0 && !submittedForms.has(id)
+    );
+    if (activeMsgIds.length === 0) return;
+
+    const timer = setInterval(() => {
+      setCountdowns(prev => {
+        const next = { ...prev };
+        for (const id of activeMsgIds) {
+          if (next[id] > 0 && !submittedForms.has(id)) {
+            next[id] = next[id] - 1;
+          }
+        }
+        return next;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [countdowns, submittedForms]);
+
+  // 倒计时到 0 时自动提交
+  useEffect(() => {
+    for (const [msgId, remaining] of Object.entries(countdowns)) {
+      if (remaining === 0 && !submittedForms.has(msgId)) {
+        const msg = messages.find(m => m.id === msgId);
+        if (msg?.configData) {
+          handleConfigSubmit(msgId, msg.configData);
+        }
+      }
+    }
+  }, [countdowns, submittedForms, messages]);
+
   const handleStartCreation = async () => {
     if (!inputText.trim() || isLoading) return;
 
@@ -500,6 +561,7 @@ export default function App() {
           },
         };
         setMessages(prev => [...prev, configMsg]);
+        setCountdowns(prev => ({ ...prev, [configMsg.id]: 60 }));
       }
     } catch (err) {
       setMessages(prev => [
@@ -564,6 +626,7 @@ export default function App() {
           },
         };
         setMessages(prev => [...prev, configMsg]);
+        setCountdowns(prev => ({ ...prev, [configMsg.id]: 60 }));
       }
     } catch (err) {
       setMessages(prev => [
@@ -698,7 +761,7 @@ export default function App() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar ios-scroll">
+        <div ref={scrollContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto custom-scrollbar ios-scroll">
           <AnimatePresence mode="wait">
             {!isChatMode ? (
               <motion.div
@@ -888,7 +951,7 @@ export default function App() {
                               onClick={() => handleConfigSubmit(msg.id, msg.configData!)}
                               className="px-6 py-2 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium hover:opacity-90 transition-all"
                             >
-                              确认提交
+                              确认提交{countdowns[msg.id] != null && countdowns[msg.id] > 0 ? ` (${countdowns[msg.id]}s)` : ''}
                             </button>
                           )}
                         </div>
@@ -1096,42 +1159,24 @@ export default function App() {
                     </div>
                   )}
                   <div className="px-4 pb-3 flex items-center justify-between">
-                    <div className={`flex items-center gap-2 ${isScriptOpen ? 'hidden' : ''}`}>
-                      <button
-                        onClick={openFilePicker}
-                        className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 transition-colors"
-                        title="上传图片或文档"
-                      >
-                        <Plus size={18} />
-                      </button>
-                      <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-medium transition-colors">
-                        <LayoutGrid size={14} />
-                        <span>自动</span>
-                      </button>
-                      <div className="h-4 w-px bg-gray-200 dark:bg-gray-800 mx-1" />
-                      <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs font-medium transition-colors">
-                        <Sparkles size={14} />
-                        <span>自动模式</span>
-                      </button>
-                      <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-400 text-xs font-medium transition-colors">
-                        <Users size={14} />
-                        <span>参与创作</span>
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-4 ml-auto">
-                      <span className={`text-[10px] text-gray-400 ${isScriptOpen ? 'hidden' : ''}`}>视频生成按 1 秒钟 1 积分扣除</span>
-                      <button
-                        disabled={!inputText.trim() || isLoading}
-                        onClick={handleChatSend}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                          inputText.trim() && !isLoading
-                            ? 'bg-black dark:bg-white text-white dark:text-black shadow-md'
-                            : 'bg-gray-200 dark:bg-gray-800 text-gray-400'
-                        }`}
-                      >
-                        {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                      </button>
-                    </div>
+                    <button
+                      onClick={openFilePicker}
+                      className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+                      title="上传图片或文档"
+                    >
+                      <Plus size={18} />
+                    </button>
+                    <button
+                      disabled={!inputText.trim() || isLoading}
+                      onClick={handleChatSend}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                        inputText.trim() && !isLoading
+                          ? 'bg-black dark:bg-white text-white dark:text-black shadow-md'
+                          : 'bg-gray-200 dark:bg-gray-800 text-gray-400'
+                      }`}
+                    >
+                      {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                    </button>
                   </div>
                 </div>
                 <p className="text-center text-[10px] text-gray-400 mt-4">
