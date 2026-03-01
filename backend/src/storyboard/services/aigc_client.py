@@ -1,4 +1,4 @@
-"""通义万相 AIGC 客户端：文生图 + 文生视频 + OSS 转存"""
+"""通义万相 AIGC 客户端：文生图 + 图生视频 + OSS 转存"""
 
 import logging
 import time
@@ -39,10 +39,10 @@ def generate_image(prompt: str) -> str:
 
 
 def generate_video(prompt: str, image_url: str | None = None) -> str:
-    """文生视频（异步轮询） → 转存 OSS → 返回 oss_key。
+    """图生视频（异步轮询） → 转存 OSS → 返回 oss_key。
 
-    使用 wan2.5-t2v-preview 时为纯文生视频（有声），image_url 被忽略。
-    如果配置的模型是 i2v 系列，则传入 image_url 做图生视频。
+    默认 i2v 模式：传入首帧图片 image_url + prompt 生成视频。
+    如果配置的模型是 t2v 系列，则忽略 image_url，纯文生视频。
     """
     model = settings.aigc_video_model
     video_size = settings.aigc_image_size  # 复用图片尺寸设置（1280*720）

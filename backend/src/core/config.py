@@ -120,7 +120,7 @@ class Settings(BaseSettings):
         default="1280*720", description="文生图输出尺寸"
     )
     aigc_video_model: str = Field(
-        default="wan2.5-t2v-preview", description="文生视频模型 ID（wan2.5-t2v-preview 支持有声视频）"
+        default="wanx2.1-i2v-plus", description="图生视频模型 ID"
     )
     aigc_video_poll_interval: int = Field(
         default=15, description="图生视频轮询间隔（秒）"
