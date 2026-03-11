@@ -6,7 +6,7 @@ WORKDIR /app
 # 先复制依赖清单，利用 layer cache
 COPY package.json package-lock.json ./
 
-# 安装 Python 和构建工具（用于 better-sqlite3 编译）
+# 安装 Python 和构建工具（用于可能的原生依赖编译）
 # 使用阿里云镜像源加速
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
     apk add --no-cache python3 make g++

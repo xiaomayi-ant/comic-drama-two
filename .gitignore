@@ -28,7 +28,6 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-docs/
 bug/
 mdm/
 
@@ -42,6 +41,14 @@ data/
 *.db
 *.sqlite
 *.sqlite3
+!frontend/src/story-editor/data/
+!frontend/src/story-editor/data/**
+
+# Backend runtime artifacts
+backend/outputs/runtime/
+backend/outputs/runs.jsonl
+backend/outputs/run_*.json
+backend/outputs/*.mp4
 
 # IDE
 .idea/
@@ -59,3 +66,5 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Local review artifacts
+timeline_副本.png

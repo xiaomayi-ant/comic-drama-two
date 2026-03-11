@@ -3,8 +3,15 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
   --color-primary: #8B5CF6;
   --color-primary-hover: #7C3AED;
+  --color-background-light: #f8f9fc;
+  --color-surface-light: #ffffff;
+  --color-border-light: #e5e7eb;
+  --color-background-dark: #0f172a;
+  --color-surface-dark: #1e293b;
+  --color-border-dark: #334155;
 }
 
 @layer base {

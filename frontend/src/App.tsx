@@ -15,7 +15,6 @@ import {
   HelpCircle,
   Sparkles,
   Crown,
-  Smartphone,
   ChevronDown,
   LayoutGrid,
   ArrowRight,
@@ -24,7 +23,6 @@ import {
   Palette,
   Settings2,
   ChevronLeft,
-  ChevronRight,
   Send,
   X,
   Lightbulb,
@@ -35,11 +33,43 @@ import {
   Loader2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { sendChat, submitConfig, streamSSE, type ChatResponse, type SSEEvent } from './services/api';
+import {
+  sendChat,
+  submitConfig,
+  streamSSE,
+  createEpisodeFromScript,
+  generateStoryboards,
+  generateAigc,
+  getEpisodeStoryboardMedia,
+  mergeEpisodeVideos,
+  saveEpisodeManualEdits,
+  cancelStoryboardTask,
+  getStoryboardTaskStatus,
+  getThread,
+  type AsyncTaskStatusResponse,
+  type CharacterImageItem,
+  type ChatResponse,
+  type ThreadDetailResponse,
+  type ThreadListItem,
+  type SaveManualEditsRequest,
+  type SSEEvent,
+  type StoryboardMediaItem,
+  updateThreadState,
+  listThreads,
+} from './services/api';
 import ScriptView from './components/ScriptView';
 import type { ScriptData } from './components/ScriptView';
+import StoryEditorPage from './story-editor/StoryEditorPage';
 
-type MessageType = 'text' | 'tool-call' | 'action-card' | 'config-form' | 'user' | 'storyboard-card' | 'script-card';
+type MessageType =
+  | 'text'
+  | 'tool-call'
+  | 'action-card'
+  | 'config-form'
+  | 'user'
+  | 'storyboard-card'
+  | 'video-progress-card'
+  | 'script-card';
 
 interface ToolStep {
   label: string;
@@ -47,21 +77,21 @@ interface ToolStep {
   detail?: string;
 }
 
-// ── 过滤内容中的 AIGC执行规格和 JSON 结构 ──
-function filterAIGCContent(content: string): string {
-  let result = content;
-  // 过滤 ## AIGC执行规格(JSON) 部分
-  result = result.replace(
-    /## AIGC执行规格\(JSON\)[\s\S]*?(?=\n## |\n\n|\Z)/gi,
-    ''
-  );
-  // 过滤底部的 JSON 数组部分（以 [ 开头，包含 "id": 或 "name": 的 JSON）
-  result = result.replace(
-    /\n\[\s*\{\s*"id":[\s\S]*/g,
-    ''
-  );
-  return result.trim();
+function parseShotDuration(value: string | undefined): number {
+  const text = String(value || '').trim().toLowerCase().replace('秒', '').replace('s', '');
+  const parsed = Number(text);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
 }
+
+function formatScriptDuration(script?: ScriptData | null): string {
+  if (!script) return '--';
+  const derived = (script.shots || []).reduce((sum, shot) => sum + parseShotDuration(shot.duration), 0);
+  if (derived > 0) {
+    return `${derived.toFixed(1)} 秒`;
+  }
+  return script.totalDuration || '--';
+}
+
 const NODE_DISPLAY_MAP: Record<string, string> = {
   intent_analysis:   '设置意图和更新配置参数',
   breakdown:         '进行剧本生成',
@@ -123,11 +153,33 @@ interface Message {
     duration?: string;
     style?: string;
     type?: string;
+    state?: 'loading' | 'completed' | 'failed';
+    progress?: number;
+    taskMessage?: string;
+    error?: string;
+    taskId?: string;
+    episodeId?: number;
+    sourceStoryboardMsgId?: string;
+    videoState?: 'idle' | 'loading' | 'completed' | 'failed';
+    videoProgress?: number;
+    videoTaskId?: string;
+    videoTaskMessage?: string;
+    videoError?: string;
+    videoSummary?: string;
+    mergedVideoUrl?: string;
     actions: { label: string; primary?: boolean }[];
     icon?: React.ReactNode;
     stats?: { label: string; value: string; icon: React.ReactNode }[];
   };
 }
+
+interface StoryEditorPersistState {
+  activeShotId: number;
+  activeFrameByShotId: Record<number, string>;
+  activeView: 'storyboard' | 'roles';
+}
+
+const VIDEO_GENERATION_CANCEL_MESSAGE = '视频生成已取消';
 
 const IMAGE_UPLOAD_TYPES = new Set([
   'image/png',
@@ -158,6 +210,52 @@ function nowTimestamp(): string {
 
 function getFileKey(file: File): string {
   return `${file.name}_${file.size}_${file.lastModified}`;
+}
+
+function getMessageIcon(type: Message['type']) {
+  if (type === 'storyboard-card' || type === 'video-progress-card') {
+    return <Clapperboard size={18} />;
+  }
+  return undefined;
+}
+
+function sanitizeMessage(message: Message): Record<string, unknown> {
+  return {
+    ...message,
+    cardData: message.cardData
+      ? {
+          ...message.cardData,
+          icon: undefined,
+          stats: message.cardData.stats?.map((stat) => ({
+            label: stat.label,
+            value: stat.value,
+          })),
+        }
+      : undefined,
+  };
+}
+
+function restoreMessage(raw: Record<string, unknown>): Message {
+  const next = raw as unknown as Message;
+  return {
+    ...next,
+    cardData: next.cardData
+      ? {
+          ...next.cardData,
+          icon: getMessageIcon(next.type),
+          stats: next.cardData.stats?.map((stat) => ({
+            ...stat,
+            icon: stat.label.includes('角色')
+              ? <Users size={16} />
+              : stat.label.includes('场景')
+                ? <MapPin size={16} />
+                : stat.label.includes('道具')
+                  ? <Package size={16} />
+                  : <LayoutGrid size={16} />,
+          })),
+        }
+      : undefined,
+  };
 }
 
 function isSupportedUploadFile(file: File): boolean {
@@ -225,16 +323,33 @@ export default function App() {
   const [collapsedForms, setCollapsedForms] = useState<Set<string>>(new Set());
   const [countdowns, setCountdowns] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [dismissedHints, setDismissedHints] = useState<Set<string>>(new Set());
+  const [isStoryboardGenerating, setIsStoryboardGenerating] = useState(false);
+  const [isVideoGenerating, setIsVideoGenerating] = useState(false);
+  const [currentThreadId, setCurrentThreadId] = useState('');
+  const [threadItems, setThreadItems] = useState<ThreadListItem[]>([]);
+  const [isThreadsLoading, setIsThreadsLoading] = useState(false);
   const [currentUserInput, setCurrentUserInput] = useState('');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState('');
   const [isScriptOpen, setIsScriptOpen] = useState(false);
+  const [isStoryboardEditorOpen, setIsStoryboardEditorOpen] = useState(false);
+  const [storyboardEditorEpisodeId, setStoryboardEditorEpisodeId] = useState<number | null>(null);
+  const [storyboardEditorMediaItems, setStoryboardEditorMediaItems] = useState<StoryboardMediaItem[]>([]);
+  const [storyboardEditorCharacterImages, setStoryboardEditorCharacterImages] = useState<CharacterImageItem[]>([]);
+  const [isStoryboardEditorMediaLoading, setIsStoryboardEditorMediaLoading] = useState(false);
+  const [storyEditorState, setStoryEditorState] = useState<StoryEditorPersistState>({
+    activeShotId: 1,
+    activeFrameByShotId: {},
+    activeView: 'storyboard',
+  });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [scriptData, setScriptData] = useState<ScriptData | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const userScrolledUp = useRef(false);
+  const canceledVideoProgressCardIdsRef = useRef<Set<string>>(new Set());
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -258,6 +373,237 @@ export default function App() {
       setIsSidebarCollapsed(true);
     }
   }, [isScriptOpen, isSidebarCollapsed]);
+
+  useEffect(() => {
+    if (!isStoryboardEditorOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsStoryboardEditorOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isStoryboardEditorOpen]);
+
+  const resetComposerState = () => {
+    setIsChatMode(false);
+    setMessages([]);
+    setFormSelections({});
+    setSubmittedForms(new Set());
+    setCollapsedForms(new Set());
+    setCountdowns({});
+    setCurrentThreadId('');
+    setCurrentUserInput('');
+    setSelectedFiles([]);
+    setFileError('');
+    setIsScriptOpen(false);
+    setIsStoryboardEditorOpen(false);
+    setStoryboardEditorEpisodeId(null);
+    setStoryboardEditorMediaItems([]);
+    setStoryboardEditorCharacterImages([]);
+    setScriptData(undefined);
+    setStoryEditorState({
+      activeShotId: 1,
+      activeFrameByShotId: {},
+      activeView: 'storyboard',
+    });
+  };
+
+  const loadThreads = async () => {
+    setIsThreadsLoading(true);
+    try {
+      const items = await listThreads();
+      setThreadItems(items);
+    } catch {
+      setThreadItems([]);
+    } finally {
+      setIsThreadsLoading(false);
+    }
+  };
+
+  const openThreadDetail = async (detail: ThreadDetailResponse) => {
+    setCurrentThreadId(detail.thread_id);
+    const state = detail.state;
+    const snapshotMessages = (state.messages_snapshot_json || []).length > 0
+      ? (state.messages_snapshot_json || []).map((item) =>
+          restoreMessage(item as Record<string, unknown>)
+        )
+      : detail.messages.map((item) =>
+          restoreMessage({
+            id: item.id,
+            type: (item.message_type === 'user' ? 'user' : item.message_type) as Message['type'],
+            sender: item.role === 'user' ? 'user' : 'ai',
+            timestamp: new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            ...(item.content_json as Record<string, unknown>),
+          })
+        );
+    setMessages(snapshotMessages);
+    setIsChatMode(snapshotMessages.length > 0);
+    setScriptData((state.current_script_data_json as unknown as ScriptData) || undefined);
+    setStoryEditorState({
+      activeShotId: Number((state.editor_state_json?.activeShotId as number) || 1),
+      activeFrameByShotId: (state.editor_state_json?.activeFrameByShotId as Record<number, string>) || {},
+      activeView: (state.editor_state_json?.activeView as 'storyboard' | 'roles') || 'storyboard',
+    });
+
+    const activeView = state.active_view || 'chat';
+    setIsScriptOpen(activeView === 'script');
+    setIsStoryboardEditorOpen(activeView === 'story-editor');
+
+    const currentEpisodeId = Number(state.current_episode_id || detail.latest_episode_id || 0) || null;
+    setStoryboardEditorEpisodeId(currentEpisodeId);
+
+    const mediaSnapshot = state.media_snapshot_json || {};
+    const snapshotItems = Array.isArray(mediaSnapshot.items)
+      ? (mediaSnapshot.items as StoryboardMediaItem[])
+      : [];
+    const snapshotCharacters = Array.isArray(mediaSnapshot.character_images)
+      ? (mediaSnapshot.character_images as CharacterImageItem[])
+      : [];
+    if (snapshotItems.length > 0 || snapshotCharacters.length > 0) {
+      setStoryboardEditorMediaItems(snapshotItems);
+      setStoryboardEditorCharacterImages(snapshotCharacters);
+    } else {
+      setStoryboardEditorMediaItems([]);
+      setStoryboardEditorCharacterImages([]);
+    }
+
+    if (currentEpisodeId && activeView === 'story-editor') {
+      setIsStoryboardEditorMediaLoading(true);
+      try {
+        const media = await getEpisodeStoryboardMedia(currentEpisodeId);
+        setStoryboardEditorMediaItems(media.items || []);
+        setStoryboardEditorCharacterImages(media.character_images || []);
+      } catch {
+        // keep snapshot fallback
+      } finally {
+        setIsStoryboardEditorMediaLoading(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    void loadThreads();
+  }, []);
+
+  useEffect(() => {
+    if (!currentThreadId) return;
+    const timer = window.setTimeout(() => {
+      const activeView = isStoryboardEditorOpen
+        ? 'story-editor'
+        : isScriptOpen
+          ? 'script'
+          : 'chat';
+      void updateThreadState(currentThreadId, {
+        active_view: activeView,
+        current_episode_id: storyboardEditorEpisodeId,
+        current_script_data_json: (scriptData as unknown as Record<string, unknown>) || {},
+        media_snapshot_json: {
+          items: storyboardEditorMediaItems,
+          character_images: storyboardEditorCharacterImages,
+        },
+        editor_state_json: {
+          activeShotId: storyEditorState.activeShotId,
+          activeFrameByShotId: storyEditorState.activeFrameByShotId,
+          activeView: storyEditorState.activeView,
+        },
+        messages_snapshot_json: messages.map(sanitizeMessage),
+      }).catch(() => undefined);
+    }, 800);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    currentThreadId,
+    isScriptOpen,
+    isStoryboardEditorOpen,
+    storyboardEditorEpisodeId,
+    storyboardEditorMediaItems,
+    storyboardEditorCharacterImages,
+    scriptData,
+    messages,
+    storyEditorState,
+  ]);
+
+  const openStoryboardEditor = async (episodeId?: number) => {
+    setStoryboardEditorEpisodeId(episodeId ?? null);
+    setStoryboardEditorMediaItems([]);
+    setStoryboardEditorCharacterImages([]);
+    setIsStoryboardEditorOpen(true);
+
+    if (!episodeId) {
+      setIsStoryboardEditorMediaLoading(false);
+      return;
+    }
+
+    setIsStoryboardEditorMediaLoading(true);
+    try {
+      const media = await getEpisodeStoryboardMedia(episodeId);
+      setStoryboardEditorMediaItems(media.items || []);
+      setStoryboardEditorCharacterImages(media.character_images || []);
+    } catch {
+      setStoryboardEditorMediaItems([]);
+      setStoryboardEditorCharacterImages([]);
+    } finally {
+      setIsStoryboardEditorMediaLoading(false);
+    }
+  };
+
+  const handleSaveStoryboardEdits = async (payload: SaveManualEditsRequest) => {
+    if (!storyboardEditorEpisodeId) {
+      throw new Error('未找到可保存的剧集 ID');
+    }
+
+    await saveEpisodeManualEdits(storyboardEditorEpisodeId, payload);
+
+    setScriptData((prev) => {
+      if (!prev) return prev;
+
+      const characterPatch = new Map(payload.characters.map((c) => [c.id, c]));
+      const nextCharacters = prev.characters.map((c) => {
+        const patch = characterPatch.get(c.id);
+        if (!patch) return c;
+        return {
+          ...c,
+          name: patch.name || c.name,
+          voice: patch.voice || c.voice,
+          appearance: {
+            ...c.appearance,
+            features: patch.appearance || c.appearance.features,
+          },
+        };
+      });
+
+      const shotPatch = new Map(payload.shots.map((s) => [s.storyboard_number, s]));
+      const nextShots = prev.shots.map((s, index) => {
+        const sid = Number(s.id) || (index + 1);
+        const patch = shotPatch.get(sid);
+        if (!patch) return s;
+        return {
+          ...s,
+          summary: patch.summary || s.summary,
+          visualDesc: patch.visual_desc || s.visualDesc,
+          narration: patch.narration || '',
+          hasNarration: Boolean((patch.narration || '').trim()),
+          duration: patch.duration_seconds > 0 ? `${patch.duration_seconds.toFixed(1)}s` : s.duration,
+        };
+      });
+
+      const nextTotalDuration = nextShots
+        .reduce((sum, shot) => {
+          const text = String(shot.duration || '').trim().toLowerCase().replace('秒', '').replace('s', '');
+          const value = Number(text);
+          return sum + (Number.isFinite(value) && value > 0 ? value : 0);
+        }, 0)
+        .toFixed(1);
+
+      return {
+        ...prev,
+        characters: nextCharacters,
+        shots: nextShots,
+        totalDuration: `${nextTotalDuration} 秒`,
+      };
+    });
+  };
 
   const handleOptionSelect = (msgId: string, sectionId: string, value: string) => {
     setFormSelections(prev => ({
@@ -533,10 +879,11 @@ export default function App() {
     setFileError('');
 
     try {
-      const chatResponse: ChatResponse = await sendChat(userInput);
+      const chatResponse: ChatResponse = await sendChat(userInput, currentThreadId || undefined);
 
       if (chatResponse.type === 'config_form') {
         const { data } = chatResponse;
+        setCurrentThreadId(data.thread_id);
 
         // Build defaults map
         const defaults: Record<string, string> = {};
@@ -562,6 +909,7 @@ export default function App() {
         };
         setMessages(prev => [...prev, configMsg]);
         setCountdowns(prev => ({ ...prev, [configMsg.id]: 60 }));
+        void loadThreads();
       }
     } catch (err) {
       setMessages(prev => [
@@ -599,10 +947,11 @@ export default function App() {
     setFileError('');
 
     try {
-      const chatResponse: ChatResponse = await sendChat(userInput);
+      const chatResponse: ChatResponse = await sendChat(userInput, currentThreadId || undefined);
 
       if (chatResponse.type === 'config_form') {
         const { data } = chatResponse;
+        setCurrentThreadId(data.thread_id);
 
         const defaults: Record<string, string> = {};
         for (const field of data.fields) {
@@ -627,6 +976,7 @@ export default function App() {
         };
         setMessages(prev => [...prev, configMsg]);
         setCountdowns(prev => ({ ...prev, [configMsg.id]: 60 }));
+        void loadThreads();
       }
     } catch (err) {
       setMessages(prev => [
@@ -676,6 +1026,484 @@ export default function App() {
     event.target.value = '';
   };
 
+  const updateMessageCard = (
+    msgId: string,
+    updater: (card: NonNullable<Message['cardData']>) => NonNullable<Message['cardData']>,
+  ) => {
+    setMessages(prev =>
+      prev.map(msg => {
+        if (msg.id !== msgId || !msg.cardData) return msg;
+        return { ...msg, cardData: updater(msg.cardData) };
+      })
+    );
+  };
+
+  const pollAsyncTask = async (
+    taskId: string,
+    onProgress: (task: AsyncTaskStatusResponse) => void,
+    options?: {
+      timeoutMs?: number;
+      timeoutMessage?: string;
+      isCancelled?: () => boolean;
+      cancelMessage?: string;
+    },
+  ): Promise<AsyncTaskStatusResponse> => {
+    const intervalMs = 2000;
+    const timeoutMs = options?.timeoutMs ?? (20 * 60 * 1000);
+    const startTs = Date.now();
+    const terminalStatuses = new Set(['completed', 'failed', 'cancelled', 'obsolete', 'expired']);
+
+    while (Date.now() - startTs < timeoutMs) {
+      if (options?.isCancelled?.()) {
+        throw new Error(options.cancelMessage || VIDEO_GENERATION_CANCEL_MESSAGE);
+      }
+      const task = await getStoryboardTaskStatus(taskId);
+      if (options?.isCancelled?.()) {
+        throw new Error(options.cancelMessage || VIDEO_GENERATION_CANCEL_MESSAGE);
+      }
+      onProgress(task);
+      if (terminalStatuses.has(task.status)) {
+        return task;
+      }
+      await new Promise(resolve => setTimeout(resolve, intervalMs));
+    }
+
+    throw new Error(options?.timeoutMessage || '任务轮询超时（20分钟）');
+  };
+
+  const handleGenerateStoryboard = async () => {
+    if (!scriptData || isStoryboardGenerating) return;
+
+    const cardMsgId = `storyboard-task-${Date.now()}`;
+    const loadingCard: Message = {
+      id: cardMsgId,
+      type: 'storyboard-card',
+      sender: 'ai',
+      timestamp: nowTimestamp(),
+      cardData: {
+        title: '视频分镜',
+        description: scriptData.synopsis || '正在基于剧本自动构建分镜结构',
+        duration: formatScriptDuration(scriptData),
+        style: scriptData.style || '2D卡通',
+        state: 'loading',
+        progress: 0,
+        taskMessage: '正在填充视觉素材...',
+        videoState: 'idle',
+        videoProgress: 0,
+        videoTaskMessage: '',
+        videoError: '',
+        videoSummary: '',
+        mergedVideoUrl: '',
+        actions: [],
+        icon: <Clapperboard size={18} />,
+      },
+    };
+    setMessages(prev => [...prev, loadingCard]);
+    setIsStoryboardGenerating(true);
+
+    try {
+      const threadId = currentThreadId || `frontend-${Date.now()}`;
+      const episode = await createEpisodeFromScript(
+        scriptData,
+        threadId,
+        scriptData.title || currentUserInput || '未命名剧集'
+      );
+      setStoryboardEditorEpisodeId(episode.episode_id);
+      const task = await generateStoryboards(episode.episode_id);
+      if (currentThreadId || threadId) {
+        void updateThreadState(currentThreadId || threadId, {
+          current_episode_id: episode.episode_id,
+          latest_task_id: task.task_id,
+          latest_task_type: 'storyboard_generation',
+          current_script_data_json: (scriptData as unknown as Record<string, unknown>) || {},
+        }).catch(() => undefined);
+      }
+
+      updateMessageCard(cardMsgId, card => ({
+        ...card,
+        taskId: task.task_id,
+        episodeId: episode.episode_id,
+        progress: 5,
+        taskMessage: task.message || '分镜任务已启动，正在填充视觉素材...',
+      }));
+
+      const finalTask = await pollAsyncTask(task.task_id, (status) => {
+        updateMessageCard(cardMsgId, card => ({
+          ...card,
+          progress: status.progress,
+          taskMessage: status.message || '正在填充视觉素材...',
+          error: status.error || '',
+        }));
+      }, {
+        timeoutMs: 20 * 60 * 1000,
+        timeoutMessage: '分镜生成轮询超时（20分钟）',
+      });
+
+      if (finalTask.status !== 'completed') {
+        throw new Error(finalTask.error || finalTask.message || '分镜生成失败');
+      }
+
+      updateMessageCard(cardMsgId, card => ({
+        ...card,
+        state: 'completed',
+        progress: 100,
+        taskMessage: '视觉素材填充完成',
+        description: scriptData.synopsis || card.description,
+        videoState: 'idle',
+        videoProgress: 0,
+        videoTaskMessage: '',
+        videoError: '',
+        videoSummary: '',
+        mergedVideoUrl: '',
+        actions: [
+          { label: '生成视频', primary: true },
+          { label: '手动编辑分镜' },
+        ],
+        stats: [
+          { label: '角色', value: `${scriptData.characters.length} 角色`, icon: <Users size={16} /> },
+          { label: '场景', value: `${scriptData.scenes.length} 场景`, icon: <MapPin size={16} /> },
+          { label: '分镜', value: `${scriptData.shots.length} 分镜`, icon: <LayoutGrid size={16} /> },
+          { label: '道具', value: `${scriptData.props.length} 道具`, icon: <Package size={16} /> },
+        ],
+      }));
+    } catch (err) {
+      updateMessageCard(cardMsgId, card => ({
+        ...card,
+        state: 'failed',
+        taskMessage: '',
+        error: err instanceof Error ? err.message : String(err),
+        actions: [{ label: '重试生成分镜', primary: true }],
+      }));
+    } finally {
+      setIsStoryboardGenerating(false);
+    }
+  };
+
+  const setStoryboardVideoActionState = (storyboardMsgId: string | undefined, generating: boolean) => {
+    if (!storyboardMsgId) return;
+    updateMessageCard(storyboardMsgId, (card) => ({
+      ...card,
+      actions: generating
+        ? [{ label: '手动编辑分镜' }]
+        : [
+            { label: '生成视频', primary: true },
+            { label: '手动编辑分镜' },
+          ],
+    }));
+  };
+
+  const handleGenerateVideo = async (msgId: string) => {
+    if (isVideoGenerating) return;
+
+    const triggerMsg = messages.find(msg => msg.id === msgId);
+    const episodeId = triggerMsg?.cardData?.episodeId;
+    if (!episodeId) {
+      updateMessageCard(msgId, card => ({
+        ...card,
+        videoState: 'failed',
+        videoError: '未找到可用的剧集 ID，请先重新生成分镜',
+        actions: [{ label: '重试生成分镜', primary: true }],
+      }));
+      return;
+    }
+
+    const isRetryInProgressCard = triggerMsg?.type === 'video-progress-card';
+    const sourceStoryboardMsgId = triggerMsg?.type === 'storyboard-card'
+      ? triggerMsg.id
+      : triggerMsg?.cardData?.sourceStoryboardMsgId;
+    const progressMsgId = isRetryInProgressCard
+      ? msgId
+      : `video-task-${episodeId}-${Date.now()}`;
+
+    canceledVideoProgressCardIdsRef.current.delete(progressMsgId);
+    if (isRetryInProgressCard) {
+      updateMessageCard(progressMsgId, card => ({
+        ...card,
+        title: '视频生成任务',
+        description: '系统正在排队并渲染分镜视频',
+        episodeId,
+        sourceStoryboardMsgId: sourceStoryboardMsgId || card.sourceStoryboardMsgId,
+        videoState: 'loading',
+        videoProgress: 0,
+        videoTaskId: '',
+        videoTaskMessage: '正在提交视频生成任务...',
+        videoError: '',
+        videoSummary: '',
+        mergedVideoUrl: '',
+        actions: [
+          { label: '取消生成' },
+          { label: '手动编辑分镜' },
+        ],
+        icon: <Clapperboard size={18} />,
+      }));
+    } else {
+      const progressCard: Message = {
+        id: progressMsgId,
+        type: 'video-progress-card',
+        sender: 'ai',
+        timestamp: nowTimestamp(),
+        cardData: {
+          title: '视频生成任务',
+          description: '系统正在排队并渲染分镜视频',
+          episodeId,
+          sourceStoryboardMsgId,
+          duration: triggerMsg?.cardData?.duration || '--',
+          style: triggerMsg?.cardData?.style || '2D卡通',
+          videoState: 'loading',
+          videoProgress: 0,
+          videoTaskId: '',
+          videoTaskMessage: '正在提交视频生成任务...',
+          videoError: '',
+          videoSummary: '',
+          mergedVideoUrl: '',
+          actions: [
+            { label: '取消生成' },
+            { label: '手动编辑分镜' },
+          ],
+          icon: <Clapperboard size={18} />,
+        },
+      };
+      setMessages(prev => [...prev, progressCard]);
+    }
+
+    setStoryboardVideoActionState(sourceStoryboardMsgId, true);
+    setIsVideoGenerating(true);
+    const isCancelled = () => canceledVideoProgressCardIdsRef.current.has(progressMsgId);
+
+    try {
+      const task = await generateAigc(episodeId);
+      if (currentThreadId) {
+        void updateThreadState(currentThreadId, {
+          latest_task_id: task.task_id,
+          latest_task_type: 'aigc_generation',
+          current_episode_id: episodeId,
+        }).catch(() => undefined);
+      }
+      if (isCancelled()) {
+        throw new Error(VIDEO_GENERATION_CANCEL_MESSAGE);
+      }
+
+      updateMessageCard(progressMsgId, card => ({
+        ...card,
+        videoTaskId: task.task_id,
+        videoProgress: 5,
+        videoTaskMessage: task.message || '正在生成视频，请稍候',
+      }));
+
+      const finalTask = await pollAsyncTask(task.task_id, (status) => {
+        updateMessageCard(progressMsgId, card => ({
+          ...card,
+          videoProgress: status.progress,
+          videoTaskMessage: status.message || '正在生成视频，请稍候',
+          videoError: status.error || '',
+        }));
+      }, {
+        timeoutMs: 120 * 60 * 1000,
+        timeoutMessage: '视频生成轮询超时（120分钟）',
+        isCancelled,
+        cancelMessage: VIDEO_GENERATION_CANCEL_MESSAGE,
+      });
+
+      if (finalTask.status === 'cancelled') {
+        throw new Error(VIDEO_GENERATION_CANCEL_MESSAGE);
+      }
+      if (finalTask.status !== 'completed') {
+        throw new Error(finalTask.error || finalTask.message || '生成视频失败');
+      }
+
+      const media = await getEpisodeStoryboardMedia(episodeId);
+      const sortedItems = [...media.items].sort((a, b) => a.storyboard_number - b.storyboard_number);
+      const mergeClips = sortedItems
+        .filter(item => Boolean(item.video_key || item.video_url))
+        .map(item => ({
+          video_url: item.video_key || item.video_url,
+          duration: item.duration || 0,
+          start_time: 0,
+          end_time: 0,
+          transition: { type: 'none', duration: 0 },
+        }));
+
+      if (mergeClips.length === 0) {
+        throw new Error('未找到可合并的视频分镜');
+      }
+
+      if (isCancelled()) {
+        throw new Error(VIDEO_GENERATION_CANCEL_MESSAGE);
+      }
+
+      updateMessageCard(progressMsgId, card => ({
+        ...card,
+        videoProgress: 0,
+        videoTaskMessage: '分镜视频已生成，正在合并成片...',
+        videoSummary: `已生成 ${mergeClips.length} 条分镜视频，开始合并`,
+      }));
+
+      const mergeOutput = `outputs/merged_episode_${episodeId}_${Date.now()}.mp4`;
+      const mergeTask = await mergeEpisodeVideos(mergeClips, mergeOutput);
+
+      updateMessageCard(progressMsgId, card => ({
+        ...card,
+        videoTaskId: mergeTask.task_id,
+        videoProgress: 5,
+        videoTaskMessage: mergeTask.message || '正在执行视频合并...',
+      }));
+
+      const mergeFinalTask = await pollAsyncTask(mergeTask.task_id, (status) => {
+        updateMessageCard(progressMsgId, card => ({
+          ...card,
+          videoProgress: status.progress,
+          videoTaskMessage: status.message || '正在执行视频合并...',
+          videoError: status.error || '',
+        }));
+      }, {
+        timeoutMs: 30 * 60 * 1000,
+        timeoutMessage: '视频合并轮询超时（30分钟）',
+        isCancelled,
+        cancelMessage: VIDEO_GENERATION_CANCEL_MESSAGE,
+      });
+
+      if (mergeFinalTask.status === 'cancelled') {
+        throw new Error(VIDEO_GENERATION_CANCEL_MESSAGE);
+      }
+      if (mergeFinalTask.status !== 'completed') {
+        throw new Error(mergeFinalTask.error || mergeFinalTask.message || '视频合并失败');
+      }
+
+      let mergedVideoUrl = '';
+      let summary = `视频已合并完成，共 ${mergeClips.length} 条分镜`;
+      try {
+        const parsed = mergeFinalTask.result ? JSON.parse(mergeFinalTask.result) : null;
+        if (parsed && typeof parsed === 'object') {
+          mergedVideoUrl = String(parsed.playable_url || parsed.merged_url || '').trim();
+          const duration = Number(parsed.output_duration || 0);
+          if (duration > 0) summary = `视频已合并完成，时长约 ${duration.toFixed(1)} 秒`;
+        }
+      } catch {
+        // ignore malformed task.result
+      }
+
+      if (!mergedVideoUrl) {
+        mergedVideoUrl = `/api/v1/storyboard/videos/merge/file/${mergeTask.task_id}`;
+      }
+
+      updateMessageCard(progressMsgId, card => ({
+        ...card,
+        videoState: 'completed',
+        videoProgress: 100,
+        videoTaskMessage: '视频生成完成',
+        videoSummary: summary,
+        mergedVideoUrl,
+        actions: [
+          { label: '重新生成视频', primary: true },
+          { label: '手动编辑分镜' },
+        ],
+      }));
+    } catch (err) {
+      const rawError = err instanceof Error ? err.message : String(err);
+      const displayError = rawError === VIDEO_GENERATION_CANCEL_MESSAGE
+        ? '已取消本次生成（后台任务可能仍在执行）'
+        : rawError;
+
+      updateMessageCard(progressMsgId, card => ({
+        ...card,
+        videoState: 'failed',
+        videoTaskMessage: '',
+        videoError: displayError,
+        actions: [
+          { label: '重试生成视频', primary: true },
+          { label: '手动编辑分镜' },
+        ],
+      }));
+    } finally {
+      canceledVideoProgressCardIdsRef.current.delete(progressMsgId);
+      setStoryboardVideoActionState(sourceStoryboardMsgId, false);
+      setIsVideoGenerating(false);
+    }
+  };
+
+  const handleCancelVideoGeneration = async (msg: Message) => {
+    const progressMsgId = msg.id;
+    const sourceStoryboardMsgId = msg.cardData?.sourceStoryboardMsgId;
+    const taskId = (msg.cardData?.videoTaskId || '').trim();
+
+    canceledVideoProgressCardIdsRef.current.add(progressMsgId);
+    updateMessageCard(progressMsgId, (card) => ({
+      ...card,
+      videoTaskMessage: '正在取消...',
+      actions: [{ label: '手动编辑分镜' }],
+    }));
+
+    if (!taskId) {
+      updateMessageCard(progressMsgId, (card) => ({
+        ...card,
+        videoState: 'failed',
+        videoTaskMessage: '',
+        videoError: '已取消本次生成',
+        actions: [
+          { label: '重试生成视频', primary: true },
+          { label: '手动编辑分镜' },
+        ],
+      }));
+      return;
+    }
+
+    try {
+      const result = await cancelStoryboardTask(taskId);
+      updateMessageCard(progressMsgId, (card) => ({
+        ...card,
+        videoState: 'failed',
+        videoTaskMessage: '',
+        videoError: result.message || '已提交取消请求',
+        actions: [
+          { label: '重试生成视频', primary: true },
+          { label: '手动编辑分镜' },
+        ],
+      }));
+      setStoryboardVideoActionState(sourceStoryboardMsgId, false);
+    } catch (error) {
+      updateMessageCard(progressMsgId, (card) => ({
+        ...card,
+        videoState: 'failed',
+        videoTaskMessage: '',
+        videoError: error instanceof Error ? error.message : String(error),
+        actions: [
+          { label: '重试生成视频', primary: true },
+          { label: '手动编辑分镜' },
+        ],
+      }));
+    }
+  };
+
+  const handleCardAction = (msg: Message, actionLabel: string) => {
+    if (actionLabel.includes('取消生成')) {
+      void handleCancelVideoGeneration(msg);
+      return;
+    }
+
+    if (actionLabel.includes('重试')) {
+      if (actionLabel.includes('视频')) {
+        handleGenerateVideo(msg.id);
+      } else {
+        handleGenerateStoryboard();
+      }
+      return;
+    }
+
+    if (actionLabel.includes('生成视频')) {
+      handleGenerateVideo(msg.id);
+      return;
+    }
+
+    if (actionLabel.includes('手动编辑分镜')) {
+      openStoryboardEditor(msg.cardData?.episodeId);
+      return;
+    }
+
+    if (actionLabel.includes('查看剧本')) {
+      setIsScriptOpen(true);
+    }
+  };
+
   return (
     <div className="flex h-[100dvh] bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 overflow-hidden font-sans">
       <input
@@ -707,7 +1535,9 @@ export default function App() {
 
         <div className="px-4 py-2 space-y-2">
           <button
-            onClick={() => { setIsChatMode(false); setMessages([]); setFormSelections({}); setSubmittedForms(new Set()); }}
+            onClick={() => {
+              resetComposerState();
+            }}
             className={`w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-medium py-3 px-4 rounded-xl transition-all shadow-sm border border-gray-200 dark:border-gray-700 ${isSidebarCollapsed ? 'px-2' : ''}`}
             title="新建"
           >
@@ -729,6 +1559,37 @@ export default function App() {
             <button className="text-xs text-gray-400 hover:text-primary transition-colors">全部</button>
           </div>
           <div className="flex-1 overflow-y-auto custom-scrollbar ios-scroll px-4 pb-4 space-y-1">
+            {isThreadsLoading ? (
+              <div className="px-2 py-3 text-sm text-gray-400">加载中...</div>
+            ) : threadItems.length === 0 ? (
+              <div className="px-2 py-3 text-sm text-gray-400">暂无历史会话</div>
+            ) : (
+              threadItems.map((thread) => (
+                <button
+                  key={thread.thread_id}
+                  onClick={() => {
+                    void getThread(thread.thread_id).then(openThreadDetail).catch(() => undefined);
+                  }}
+                  className={`w-full text-left px-3 py-3 rounded-xl transition-colors ${
+                    currentThreadId === thread.thread_id
+                      ? 'bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700'
+                      : 'hover:bg-white/80 dark:hover:bg-gray-800/80'
+                  }`}
+                >
+                  <div className="text-sm font-medium text-gray-800 dark:text-gray-100 line-clamp-2">
+                    {thread.summary || thread.title}
+                  </div>
+                  <div className="mt-1 text-xs text-gray-400">
+                    {new Date(thread.updated_at).toLocaleString('zh-CN', {
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </div>
+                </button>
+              ))
+            )}
           </div>
         </div>
 
@@ -975,7 +1836,7 @@ export default function App() {
                             </div>
                             <div className="flex items-center gap-1.5 text-xs text-gray-400">
                               <Clock size={14} />
-                              <span>{scriptData?.totalDuration || '24秒'}</span>
+                              <span>{formatScriptDuration(scriptData)}</span>
                             </div>
                           </div>
 
@@ -993,6 +1854,7 @@ export default function App() {
                           </div>
 
                           {/* 引导提示 */}
+                          {!dismissedHints.has(msg.id) && (
                           <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800/50 rounded-xl p-4 flex items-start gap-3 relative">
                             <div className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
                               <Lightbulb size={20} className="text-primary" />
@@ -1003,10 +1865,14 @@ export default function App() {
                                 点击"生成分镜"开始下一步，您也可以继续对话完善您的视频分镜
                               </p>
                             </div>
-                            <button className="text-gray-400 hover:text-gray-600">
+                            <button
+                              onClick={() => setDismissedHints(prev => new Set(prev).add(msg.id))}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
                               <X size={16} />
                             </button>
                           </div>
+                          )}
                         </div>
 
                         {/* Footer: 时间 + 操作按钮 */}
@@ -1019,9 +1885,124 @@ export default function App() {
                             >
                               查看剧本
                             </button>
-                            <button className="px-4 py-1.5 rounded-lg text-sm font-medium bg-black dark:bg-white text-white dark:text-black hover:opacity-90 transition-all">
-                              生成分镜
+                            <button
+                              onClick={handleGenerateStoryboard}
+                              disabled={!scriptData || isStoryboardGenerating}
+                              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                !scriptData || isStoryboardGenerating
+                                  ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-300 cursor-not-allowed'
+                                  : 'bg-black dark:bg-white text-white dark:text-black hover:opacity-90'
+                              }`}
+                            >
+                              {isStoryboardGenerating ? '分镜生成中...' : '生成分镜'}
                             </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {msg.type === 'video-progress-card' && msg.cardData && (
+                      <div className="w-full bg-gray-50/50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden mt-4">
+                        <div className="p-6">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {msg.cardData.videoState === 'loading' ? (
+                                <Loader2 size={18} className="text-amber-500 animate-spin" />
+                              ) : msg.cardData.videoState === 'completed' ? (
+                                <CheckCircle2 size={18} className="text-emerald-500" />
+                              ) : (
+                                <Clapperboard size={18} className="text-slate-500" />
+                              )}
+                              <span className="font-medium">{msg.cardData.title || '视频生成任务'}</span>
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {msg.cardData.videoProgress || 0}%
+                            </div>
+                          </div>
+
+                          <div className="mt-4 rounded-xl border border-amber-100/80 dark:border-amber-800/40 overflow-hidden">
+                            <div className="h-24 bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 relative">
+                              <div className="absolute inset-0 bg-white/30 dark:bg-black/20 backdrop-blur-[1px]" />
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                {msg.cardData.videoState === 'loading' ? (
+                                  <Loader2 size={22} className="text-slate-600 dark:text-slate-300 animate-spin" />
+                                ) : msg.cardData.videoState === 'completed' ? (
+                                  <CheckCircle2 size={22} className="text-emerald-500" />
+                                ) : (
+                                  <Clapperboard size={22} className="text-slate-500 dark:text-slate-300" />
+                                )}
+                              </div>
+                            </div>
+                            <div className="p-4 bg-white dark:bg-gray-900/60">
+                              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                                {msg.cardData.videoState === 'loading'
+                                  ? '正在生成视频...'
+                                  : msg.cardData.videoState === 'completed'
+                                    ? '视频生成完成'
+                                    : msg.cardData.videoState === 'failed'
+                                      ? '视频生成失败'
+                                      : '视频任务待开始'}
+                              </p>
+                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                {msg.cardData.videoTaskMessage || '系统正在排队处理中'}
+                              </p>
+                              <div className="mt-3 h-1.5 w-full bg-amber-100 dark:bg-amber-900/40 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-amber-500 transition-all duration-500"
+                                  style={{ width: `${Math.max(0, Math.min(100, msg.cardData.videoProgress || 0))}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {msg.cardData.videoState === 'completed' && (
+                            <div className="mt-4 p-4 bg-emerald-50/70 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-800/40">
+                              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">视频生成完成</p>
+                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                {msg.cardData.videoSummary || '可继续下一步合成或编辑'}
+                              </p>
+                              {msg.cardData.mergedVideoUrl ? (
+                                <div className="mt-4 bg-white dark:bg-gray-900/70 border border-emerald-100 dark:border-emerald-900/40 rounded-lg p-3">
+                                  <video
+                                    controls
+                                    preload="metadata"
+                                    playsInline
+                                    className="w-full rounded-md bg-black"
+                                    src={msg.cardData.mergedVideoUrl}
+                                  />
+                                </div>
+                              ) : (
+                                <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+                                  当前没有可播放的合并视频地址，请稍后重试。
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {msg.cardData.videoState === 'failed' && (
+                            <div className="mt-4 p-4 bg-rose-50/70 dark:bg-rose-900/10 rounded-xl border border-rose-200 dark:border-rose-800/40">
+                              <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">视频生成失败</p>
+                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{msg.cardData.videoError || '请重试'}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="px-6 py-4 bg-gray-100/50 dark:bg-gray-800/50 flex items-center justify-between">
+                          <span className="text-xs text-gray-400">{msg.timestamp}</span>
+                          <div className="flex gap-2">
+                            {msg.cardData.actions.map((action, i) => (
+                              <button
+                                key={i}
+                                onClick={() => handleCardAction(msg, action.label)}
+                                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                  action.primary
+                                    ? 'bg-black dark:bg-white text-white dark:text-black hover:opacity-90'
+                                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                }`}
+                              >
+                                {action.label}
+                              </button>
+                            ))}
                           </div>
                         </div>
                       </div>
@@ -1032,12 +2013,16 @@ export default function App() {
                         <div className="p-6">
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
-                              {msg.cardData.icon}
+                              {msg.type === 'storyboard-card' && msg.cardData.state === 'loading' ? (
+                                <Loader2 size={18} className="text-blue-500 animate-spin" />
+                              ) : (
+                                msg.cardData.icon
+                              )}
                               <span className="font-medium">{msg.cardData.title}</span>
                             </div>
                             <div className="flex items-center gap-2 text-xs text-gray-400">
                               <Clock size={14} />
-                              <span>{msg.cardData.duration}</span>
+                              <span>{msg.type === 'storyboard-card' ? formatScriptDuration(scriptData) : msg.cardData.duration}</span>
                             </div>
                           </div>
 
@@ -1049,11 +2034,39 @@ export default function App() {
                             <div className="flex-1" />
                             <div className="flex items-center gap-1.5 bg-purple-100 dark:bg-purple-900/30 text-primary px-2 py-1 rounded-full text-xs font-medium">
                               <Palette size={14} />
-                              <span>{msg.cardData.style}</span>
+                              <span>{msg.cardData.style || '2D卡通'}</span>
                             </div>
                           </div>
 
-                          {msg.type === 'storyboard-card' && (
+                          {msg.type === 'storyboard-card' && msg.cardData.state === 'loading' && (
+                            <div className="mb-6 p-4 bg-blue-50/60 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-800/40">
+                              <div className="flex items-start gap-3">
+                                <Loader2 size={18} className="mt-0.5 text-blue-500 animate-spin" />
+                                <div className="flex-1">
+                                  <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">正在填充视觉素材...</p>
+                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    {msg.cardData.taskMessage || '正在生成分镜结构，请稍候'}
+                                  </p>
+                                  <div className="mt-3 h-1.5 w-full bg-blue-100 dark:bg-blue-900/40 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-blue-500 transition-all duration-500"
+                                      style={{ width: `${Math.max(0, Math.min(100, msg.cardData.progress || 0))}%` }}
+                                    />
+                                  </div>
+                                </div>
+                                <span className="text-xs text-blue-500">{msg.cardData.progress || 0}%</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {msg.type === 'storyboard-card' && msg.cardData.state === 'failed' && (
+                            <div className="mb-6 p-4 bg-rose-50/70 dark:bg-rose-900/10 rounded-xl border border-rose-200 dark:border-rose-800/40">
+                              <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">分镜生成失败</p>
+                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{msg.cardData.error || '请重试'}</p>
+                            </div>
+                          )}
+
+                          {msg.type === 'storyboard-card' && msg.cardData.state !== 'loading' && msg.cardData.state !== 'failed' && (
                             <div className="mb-6 p-4 bg-white dark:bg-gray-800/50 rounded-xl border border-gray-100 dark:border-gray-800">
                               <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-3 mb-4 leading-relaxed">
                                 {msg.cardData.description}
@@ -1069,31 +2082,123 @@ export default function App() {
                             </div>
                           )}
 
+                          {msg.type === 'storyboard-card' && msg.cardData.videoState === 'loading' && (
+                            <div className="mb-6 p-4 bg-amber-50/70 dark:bg-amber-900/10 rounded-xl border border-amber-100 dark:border-amber-800/40">
+                              <div className="flex items-start gap-3">
+                                <Loader2 size={18} className="mt-0.5 text-amber-500 animate-spin" />
+                                <div className="flex-1">
+                                  <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">正在处理视频...</p>
+                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    {msg.cardData.videoTaskMessage || '正在调用模型生成视频'}
+                                  </p>
+                                  <div className="mt-3 h-1.5 w-full bg-amber-100 dark:bg-amber-900/40 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-amber-500 transition-all duration-500"
+                                      style={{ width: `${Math.max(0, Math.min(100, msg.cardData.videoProgress || 0))}%` }}
+                                    />
+                                  </div>
+                                </div>
+                                <span className="text-xs text-amber-600">{msg.cardData.videoProgress || 0}%</span>
+                              </div>
+                            </div>
+                          )}
+
+                          {msg.type === 'storyboard-card' && msg.cardData.videoState === 'completed' && (
+                            <div className="mb-6 p-4 bg-emerald-50/70 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-800/40">
+                              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">视频生成完成</p>
+                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                {msg.cardData.videoSummary || '可继续下一步合成或编辑'}
+                              </p>
+                              {msg.cardData.mergedVideoUrl ? (
+                                <div className="mt-4 bg-white dark:bg-gray-900/70 border border-emerald-100 dark:border-emerald-900/40 rounded-lg p-3">
+                                  <video
+                                    controls
+                                    preload="metadata"
+                                    playsInline
+                                    className="w-full rounded-md bg-black"
+                                    src={msg.cardData.mergedVideoUrl}
+                                  />
+                                </div>
+                              ) : (
+                                <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+                                  当前没有可播放的合并视频地址，请稍后重试。
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {msg.type === 'storyboard-card' && msg.cardData.videoState === 'failed' && (
+                            <div className="mb-6 p-4 bg-rose-50/70 dark:bg-rose-900/10 rounded-xl border border-rose-200 dark:border-rose-800/40">
+                              <p className="text-sm font-semibold text-rose-600 dark:text-rose-400">视频生成失败</p>
+                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{msg.cardData.videoError || '请重试'}</p>
+                            </div>
+                          )}
+
+                          {!dismissedHints.has(msg.id) && (
                           <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800/50 rounded-xl p-4 flex items-start gap-3 relative">
                             <div className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-                              <Lightbulb size={20} className="text-primary" />
+                              {msg.type === 'storyboard-card' && (msg.cardData.state === 'loading' || msg.cardData.videoState === 'loading') ? (
+                                <Loader2 size={20} className="text-primary animate-spin" />
+                              ) : (
+                                <Lightbulb size={20} className="text-primary" />
+                              )}
                             </div>
                             <div className="flex-1">
                               <h4 className="text-sm font-semibold text-primary mb-1">
-                                {msg.type === 'storyboard-card' ? '完成您的视频创作' : '开始创作您的视频'}
+                                {msg.type === 'storyboard-card'
+                                  ? msg.cardData.state === 'loading'
+                                    ? '正在生成分镜'
+                                    : msg.cardData.videoState === 'loading'
+                                      ? '正在生成视频'
+                                      : msg.cardData.videoState === 'completed'
+                                        ? '视频生成已完成'
+                                        : '完成您的视频创作'
+                                  : '开始创作您的视频'}
                               </h4>
                               <p className="text-xs text-gray-500 dark:text-gray-400">
                                 {msg.type === 'storyboard-card'
-                                  ? '您可以点击"生成视频"直接生成，或点击"手动编辑分镜"编辑后生成视频'
+                                  ? msg.cardData.state === 'loading'
+                                    ? '系统正在分析镜头并填充视觉素材，完成后将自动切换到分镜卡片'
+                                    : msg.cardData.videoState === 'loading'
+                                      ? '系统正在逐条分镜生成图片与视频素材，请耐心等待'
+                                      : msg.cardData.videoState === 'completed'
+                                        ? '分镜对应的视频素材已生成，可继续编辑或进入下一步合成'
+                                        : '您可以点击"生成视频"直接生成，或点击"手动编辑分镜"编辑后生成视频'
                                   : '点击"生成分镜"开始下一步，您也可以继续对话完善您的视频分镜'}
                               </p>
                             </div>
-                            <button className="text-gray-400 hover:text-gray-600">
+                            <button
+                              onClick={() => setDismissedHints(prev => new Set(prev).add(msg.id))}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
                               <X size={16} />
                             </button>
                           </div>
+                          )}
                         </div>
                         <div className="px-6 py-4 bg-gray-100/50 dark:bg-gray-800/50 flex items-center justify-between">
                           <span className="text-xs text-gray-400">{msg.timestamp}</span>
                           <div className="flex gap-2">
+                            {msg.type === 'storyboard-card' && msg.cardData.state === 'loading' && (
+                              <button
+                                disabled
+                                className="px-4 py-1.5 rounded-lg text-sm font-medium bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-300 cursor-not-allowed"
+                              >
+                                分镜生成中...
+                              </button>
+                            )}
+                            {msg.type === 'storyboard-card' && msg.cardData.videoState === 'loading' && (
+                              <button
+                                disabled
+                                className="px-4 py-1.5 rounded-lg text-sm font-medium bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-300 cursor-not-allowed"
+                              >
+                                视频生成中...
+                              </button>
+                            )}
                             {msg.cardData.actions.map((action, i) => (
                               <button
                                 key={i}
+                                onClick={() => handleCardAction(msg, action.label)}
                                 className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
                                   action.primary
                                     ? 'bg-black dark:bg-white text-white dark:text-black hover:opacity-90'
@@ -1204,6 +2309,37 @@ export default function App() {
         onClose={() => setIsScriptOpen(false)}
         scriptData={scriptData}
       />
+
+      <AnimatePresence>
+        {isStoryboardEditorOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] bg-black/45 backdrop-blur-[2px] p-2 md:p-4"
+            onClick={() => setIsStoryboardEditorOpen(false)}
+          >
+            <motion.div
+              initial={{ y: 18, opacity: 0.96 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 12, opacity: 0.96 }}
+              className="w-full h-full bg-white dark:bg-slate-950 rounded-xl overflow-hidden shadow-2xl border border-slate-200/70 dark:border-slate-800"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <StoryEditorPage
+                onClose={() => setIsStoryboardEditorOpen(false)}
+                scriptData={scriptData}
+                mediaItems={storyboardEditorMediaItems}
+                characterImages={storyboardEditorCharacterImages}
+                loadingMedia={isStoryboardEditorMediaLoading && !!storyboardEditorEpisodeId}
+                onSave={handleSaveStoryboardEdits}
+                initialState={storyEditorState}
+                onStateChange={setStoryEditorState}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

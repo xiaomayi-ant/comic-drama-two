@@ -67,6 +67,20 @@ interface ScriptViewProps {
   scriptData?: ScriptData;
 }
 
+function parseShotDuration(value: string | undefined): number {
+  const text = String(value || '').trim().toLowerCase().replace('秒', '').replace('s', '');
+  const parsed = Number(text);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
+function formatScriptDuration(script: ScriptData): string {
+  const derived = (script.shots || []).reduce((sum, shot) => sum + parseShotDuration(shot.duration), 0);
+  if (derived > 0) {
+    return `${derived.toFixed(1)} 秒`;
+  }
+  return script.totalDuration;
+}
+
 const MOCK_SCRIPT: ScriptData = {
   title: "张三丰张无忌武侠对决",
   totalShots: 3,
@@ -169,6 +183,7 @@ export default function ScriptView({ isOpen, onClose, scriptData }: ScriptViewPr
   const [activeSection, setActiveSection] = useState('requirement');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const script = scriptData || MOCK_SCRIPT;
+  const displayDuration = formatScriptDuration(script);
 
   const sections = [
     { id: 'requirement', label: '需求', icon: <LayoutList size={16} /> },
@@ -237,7 +252,7 @@ export default function ScriptView({ isOpen, onClose, scriptData }: ScriptViewPr
             <div className="flex items-center gap-4 text-sm">
               <h2 className="text-base font-bold">剧本</h2>
               <span className="text-gray-400">镜头 {script.totalShots}</span>
-              <span className="text-gray-400">时长 {script.totalDuration}</span>
+              <span className="text-gray-400">时长 {displayDuration}</span>
               <span className="text-gray-600 dark:text-gray-300 font-medium truncate max-w-[200px]">{script.title}</span>
             </div>
             <button
@@ -265,7 +280,7 @@ export default function ScriptView({ isOpen, onClose, scriptData }: ScriptViewPr
                     </div>
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                       <span>总计 <strong>{script.totalShots} 个镜头</strong></span>
-                      <span>总时长 <strong>{script.totalDuration}</strong></span>
+                      <span>总时长 <strong>{displayDuration}</strong></span>
                       <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs font-medium">
                         {script.style}
                       </span>
